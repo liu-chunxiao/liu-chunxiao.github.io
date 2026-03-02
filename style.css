@@ -1,0 +1,224 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base styling */
+body {
+  background-color: #eeece2;
+  color: #333;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+
+
+
+/* Header styling */
+header {
+  text-align: center;
+  padding: 20px 0;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  font-family: 'EB Garamond', serif;
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+nav ul li a {
+  text-decoration: none;
+  color: #333;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+nav ul li a:hover,
+nav ul li a.active {
+  border-color: #333;
+  color: #000;
+}
+
+/* Main content styling */
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: #FFFFFF;
+  padding: 30px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+section {
+  margin-bottom: 40px;
+}
+
+section h2 {
+  font-family: 'EB Garamond', serif;
+  font-weight: 700;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #333;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 10px;
+}
+
+p {
+  margin-bottom: 15px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+/* Work page subsections */
+.subsection {
+  margin-bottom: 30px;
+}
+
+.subsection h3 {
+  font-family: 'EB Garamond', serif;
+  font-weight: 500;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #333;
+  border-left: 4px solid #333;
+  padding-left: 10px;
+}
+
+.subsection ul {
+  list-style: disc inside;
+  margin-left: 20px;
+}
+
+
+
+/* Timeline list styling */
+.year-event-list {
+  list-style: circle;
+  margin-top: 20px;
+  padding-left: 30px;
+}
+
+.year-event-list li {
+  margin-bottom: 10px;
+  padding-left: 10px;
+  border-left: 3px; /*solid #333;*/
+}
+
+/* Styling for the year portion */
+.year-event-list .year {
+  font-family: 'Zen Maru Gothic';/*'Crimson Pro', serif;*/
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+  color: #333;
+  /* Optional: adjust width if you want a fixed column effect */
+  /* width: 80px; */
+}
+
+/* Styling for the event description */
+/* (Assumes body text is already set to Zen Maru Gothic) */
+.year-event-list .event {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+
+
+
+
+/* ──────────────────────────────────────────────────────────────────────
+   Research List: EB Garamond for titles, Zen Maru Gothic for details
+   ──────────────────────────────────────────────────────────────────────*/
+
+
+/* Container for the research bullets */
+.research-list {
+  list-style: disc inside;
+  margin-left: 1.5em;
+  padding: 0;
+}
+
+/* Each topic title (the “Quantum magnetism”, etc.) */
+.research-list li {
+  font-family: 'EB Garamond', serif;
+  font-weight: 600;
+  font-size: 1.2rem;       /* a bit smaller than your Research heading */
+  margin-bottom: 0.5em;
+}
+
+/* The explanatory paragraph under each topic */
+.research-list li p {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.8em;        /* as requested */
+  font-weight: 300;
+  line-height: 1.5;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin: 0.8em 0 0 0;     /* small gap above the paragraph */
+}
+
+.subtopic-list {
+  list-stylee: none;     /* a different bullet shape */
+  margin: 0.5em 0 0 1.5em;      /* indent and small top margin */
+  padding: 0;
+}
+
+.subtopic-list li {
+  list-style: none;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-weight: 900;
+  font-size: 0.9em;
+}
+
+.subtopic-list li p {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 0.9em;        /* as requested */
+  font-weight: 300;
+  line-height: 1.5;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin: 0.7em 0 0 0;     /* small gap above the paragraph */
+}
+
+
+/* Environment for personal interest topic lists */
+.topic-list {
+  font-size: 0.85em;    /* Smaller font size relative to your base text */
+  line-height: 1.4;     /* Moderate line spacing */
+  margin-left: 1.5em;   /* Indentation for list items */
+  margin-bottom: 1em;   /* Space below the list */
+  list-style-type: disc; /* You can change this to your preferred list style */
+}
+
+/* Optional: style links within these lists */
+.topic-list a {
+  text-decoration: none;
+  color: inherit;       /* Inherit color from the parent, or set your desired color */
+}
+
+.topic-list a:hover {
+  text-decoration: underline;
+}
+
+
+/* Footer styling */
+footer {
+  text-align: center;
+  margin-top: 30px;
+  padding: 20px 0;
+  font-size: 0.9rem;
+  color: #666;
+  border-top: 1px solid #ddd;
+}
