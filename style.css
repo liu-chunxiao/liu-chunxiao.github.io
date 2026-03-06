@@ -149,7 +149,7 @@ p {
 
 /* Container for the research bullets */
 .research-list {
-  list-style: disc inside;
+  list-style: none;
   margin-left: 1.5em;
   padding: 0;
 }
@@ -174,7 +174,7 @@ p {
 }
 
 .subtopic-list {
-  list-stylee: none;     /* a different bullet shape */
+  list-style: disc inside;     /* a different bullet shape */
   margin: 0.5em 0 0 1.5em;      /* indent and small top margin */
   padding: 0;
 }
