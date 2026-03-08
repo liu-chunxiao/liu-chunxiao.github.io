@@ -60,5 +60,28 @@
   <footer>
     <p>&copy; 2026 Chunxiao Liu. All rights reserved.</p>
   </footer>
+
+  <script>
+document.addEventListener("click", function(event) {
+
+  let link = event.target.closest("a");
+  if (!link) return;
+
+  let url = new URL(link.href, window.location.href);
+
+  // check if link goes to another domain
+  if (url.hostname !== window.location.hostname) {
+
+    gtag('event', 'outbound_click', {
+      event_category: 'outbound',
+      link_url: url.href,
+      link_domain: url.hostname
+    });
+
+  }
+
+});
+</script>
+  
 </body>
 </html>
