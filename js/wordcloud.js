@@ -89,6 +89,11 @@ function renderWordCloud() {
   });
 }
 
+
+const boostedWords = words.map(([word, freq]) => {
+  return [word, freq === 2 ? 2.6 : freq];
+});
+
 document.addEventListener("DOMContentLoaded", function () {
   renderWordCloud();
 });
