@@ -245,7 +245,7 @@ footer {
 #wordcloud {
   width: 60%;
   max-width: 1000px;
-  height: 620px;
+  height: 400px;
   border-radius: 18px;
   background: linear-gradient(180deg, #faf8f4 0%, #f3efe7 100%);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
