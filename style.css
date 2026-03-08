@@ -226,3 +226,26 @@ footer {
   color: #666;
   border-top: 1px solid #ddd;
 }
+
+
+
+.wordcloud-section {
+  max-width: 900px;
+  margin: 60px auto;
+  text-align: center;
+}
+
+.wordcloud-title {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+#wordcloud {
+  width: 100%;
+  height: 500px;
+  border-radius: 16px;
+  background: linear-gradient(180deg,#faf8f4,#f3efe7);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+}
