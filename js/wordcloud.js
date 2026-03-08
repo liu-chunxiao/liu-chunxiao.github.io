@@ -99,7 +99,7 @@ function renderWordCloud() {
 
     // Stronger nonlinear contrast between frequencies.
     weightFactor: function (freq) {
-      return 6 + 9 * Math.pow(freq, 1.6);
+      return 8 + 8 * Math.pow(freq, 1.5);
     },
 
     fontFamily: "Georgia, Garamond, 'Times New Roman', serif",
