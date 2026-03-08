@@ -60,7 +60,7 @@ function renderWordCloud() {
   const canvas = document.getElementById("wordcloud");
 
   WordCloud(canvas, {
-    list: words,
+    list: boostedWords,
     shape: WORDCLOUD_SHAPE,
 
     // Smaller grid helps fit more words
