@@ -35,16 +35,27 @@
       </p>
     </section>
 
-    <section class="wordcloud-section">
-      <h2 class="wordcloud-title">Research Keywords</h2>
-      <canvas id="wordcloud"></canvas>
-    </section>
+<section class="wordcloud-section">
+  <h2 class="wordcloud-title">Research Keywords</h2>
 
-    <!-- load library -->
-    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.3/src/wordcloud2.js"></script>
+  <div class="wordcloud-controls">
+    <label for="shapeSelect">Shape:</label>
+    <select id="shapeSelect">
+      <option value="hexagon" selected>Hexagon</option>
+      <option value="circle">Circle</option>
+      <option value="square">Rectangle</option>
+      <option value="diamond">Diamond</option>
+      <option value="cardioid">Cardioid</option>
+      <option value="triangle-forward">Triangle</option>
+      <option value="star">Star</option>
+    </select>
+  </div>
 
-    <!-- your script -->
-    <script src="js/wordcloud.js"></script>
+  <canvas id="wordcloud" width="900" height="520"></canvas>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.3/src/wordcloud2.js"></script>
+<script src="js/wordcloud.js"></script>
 
     
   </main>
