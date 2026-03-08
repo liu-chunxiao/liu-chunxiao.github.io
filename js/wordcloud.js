@@ -40,6 +40,9 @@ const words = [
   ["carrier", 2]
 ];
 
+// Backdoor option: change this to "circle", "square", "diamond", "hexagon", etc.
+const WORDCLOUD_SHAPE = "hexagon";
+
 const palette = [
   "#5b6c8f",
   "#8b5e3c",
@@ -53,36 +56,39 @@ function pickColor() {
   return palette[Math.floor(Math.random() * palette.length)];
 }
 
-function renderWordCloud(shape = "hexagon") {
+function renderWordCloud() {
   const canvas = document.getElementById("wordcloud");
 
   WordCloud(canvas, {
     list: words,
-    shape: shape,
-    gridSize: 10,
-    weightFactor: function (size) {
-      return 9 + size * 3;
+    shape: WORDCLOUD_SHAPE,
+
+    // Smaller grid helps fit more words
+    gridSize: 6,
+
+    // Make size differences less extreme so freq=2 words survive
+    weightFactor: function (freq) {
+      return 12 + freq * 2.2;
     },
+
     fontFamily: "Georgia, Garamond, 'Times New Roman', serif",
     color: function () {
       return pickColor();
     },
+
     backgroundColor: "transparent",
-    rotateRatio: 0.18,
-    minRotation: -Math.PI / 12,
-    maxRotation: Math.PI / 12,
+
+    // Less rotation = easier packing
+    rotateRatio: 0.12,
+    minRotation: -Math.PI / 14,
+    maxRotation: Math.PI / 14,
+
     drawOutOfBound: false,
     shrinkToFit: true,
-    ellipticity: 0.8
+    ellipticity: 0.82
   });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  const shapeSelect = document.getElementById("shapeSelect");
-
-  renderWordCloud(shapeSelect.value);
-
-  shapeSelect.addEventListener("change", function () {
-    renderWordCloud(this.value);
-  });
+  renderWordCloud();
 });
