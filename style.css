@@ -230,42 +230,26 @@ footer {
 
 
 .wordcloud-section {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 60px auto;
   text-align: center;
 }
 
 .wordcloud-title {
   font-size: 1.6rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem;
   font-weight: 600;
   letter-spacing: 0.03em;
 }
 
-.wordcloud-controls {
-  margin-bottom: 1rem;
-  font-size: 0.95rem;
-}
-
-.wordcloud-controls label {
-  margin-right: 0.5rem;
-}
-
-.wordcloud-controls select {
-  font: inherit;
-  padding: 0.35rem 0.6rem;
-  border-radius: 8px;
-  border: 1px solid #cfc8bc;
-  background: #fffdf9;
-}
-
 #wordcloud {
   width: 100%;
-  max-width: 900px;
-  height: 520px;
+  max-width: 1000px;
+  height: 620px;
   border-radius: 18px;
   background: linear-gradient(180deg, #faf8f4 0%, #f3efe7 100%);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: block;
   margin: 0 auto;
 }
+
