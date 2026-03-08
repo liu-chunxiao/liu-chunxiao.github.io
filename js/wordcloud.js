@@ -91,8 +91,11 @@ function renderWordCloud() {
 
 
 const boostedWords = words.map(([word, freq]) => {
-  return [word, freq === 2 ? 2.6 : freq];
+  if (freq === 2) return [word, 2.8];
+  return [word, freq];
 });
+
+
 
 document.addEventListener("DOMContentLoaded", function () {
   renderWordCloud();
