@@ -41,7 +41,7 @@ const words = [
 ];
 
 // Backdoor option: change this to "circle", "square", "diamond", "hexagon", etc.
-const WORDCLOUD_SHAPE = "hexagon";
+const WORDCLOUD_SHAPE = "square";
 
 const palette = [
   "#5b6c8f",
@@ -68,7 +68,7 @@ function renderWordCloud() {
 
     // Make size differences less extreme so freq=2 words survive
     weightFactor: function (freq) {
-      return 12 + freq * 2.2;
+      return 24 + freq * 5;
     },
 
     fontFamily: "Georgia, Garamond, 'Times New Roman', serif",
