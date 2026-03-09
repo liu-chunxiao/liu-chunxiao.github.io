@@ -292,3 +292,113 @@ footer {
   border-bottom-color: rgba(0,0,0,0.55);
 }
 
+
+
+
+
+
+/* =========================================================
+   Lianliankan mini-game (Metaphysics page)
+   ========================================================= */
+
+.lianliankan {
+  margin-top: 1.2rem;
+}
+
+.lianliankan .game-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem 1rem;
+  align-items: center;
+  margin: 0.8rem 0 1rem 0;
+  font-size: 0.95em;
+}
+
+.lianliankan .game-bar button,
+.lianliankan .game-bar select {
+  font-family: inherit;
+  font-size: 0.95em;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgba(0,0,0,0.25);
+  background: #ffffff;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lianliankan .game-bar button:hover,
+.lianliankan .game-bar select:hover {
+  border-color: rgba(0,0,0,0.5);
+}
+
+.lianliankan .status {
+  opacity: 0.8;
+}
+
+.lianliankan .board-wrap {
+  position: relative;
+  margin: 0.5rem auto 0 auto;
+  width: min(760px, 95%);
+}
+
+.lianliankan .board {
+  display: grid;
+  gap: 8px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.lianliankan .tile {
+  user-select: none;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.15);
+  background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 1.35rem;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.lianliankan .tile:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0,0,0,0.35);
+}
+
+.lianliankan .tile.selected {
+  border-color: rgba(0,0,0,0.7);
+  outline: 2px solid rgba(0,0,0,0.15);
+}
+
+.lianliankan .tile.empty {
+  background: transparent;
+  border: 1px dashed rgba(0,0,0,0.10);
+  cursor: default;
+}
+
+.lianliankan canvas.path {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lianliankan .hint {
+  margin-top: 0.7rem;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+.lianliankan .hint code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.95em;
+}
+
+
+
+
+
+
