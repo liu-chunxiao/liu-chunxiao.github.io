@@ -382,7 +382,7 @@ footer {
   cursor:default;
 }
 
-/* Symbol wrapper: ensures text/emoji never forces tile expansion */
+/* Symbol wrapper: scales with board size via --llk-font-size */
 .lianliankan .tile .llk-symbol{
   width:92%;
   height:92%;
@@ -390,7 +390,7 @@ footer {
   align-items:center;
   justify-content:center;
   overflow:hidden;
-  font-size: clamp(10px, 2.2vmin, 22px); /* scales down more for big boards */
+  font-size: var(--llk-font-size, 18px);
   line-height:1;
 }
 
@@ -400,6 +400,23 @@ footer {
   height:100%;
   object-fit:contain;
   display:block;
+}
+
+/* Color tile style (no emoji/text needed) */
+.lianliankan .tile.color-tile{
+  background: var(--llk-tile-color, #ffffff);
+  border: 1px solid rgba(0,0,0,0.14);
+}
+
+.lianliankan .tile.color-tile.selected{
+  outline: 3px solid rgba(0,0,0,0.18);
+  border-color: rgba(0,0,0,0.40);
+}
+
+/* Even smaller spacing between plaquettes */
+.lianliankan .board{
+  gap: 1px;      /* was 2px */
+  padding: 5px;  /* slightly smaller padding */
 }
 
 .lianliankan .hint{
