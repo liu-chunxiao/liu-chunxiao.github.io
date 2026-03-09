@@ -5,78 +5,113 @@
   // PBC applies to connectivity: row/col wrap-around is allowed.
   // =========================================================
 
-const THEMES = {
-  animals: ["🐱","🐶","🦊","🐼","🐯","🐸","🐵","🐰","🦁","🐨","🐧","🦉","🐙","🐢","🦋","🐝","🦒","🦓","🦝","🦔"],
-  music:   ["🎹","🎻","🎺","🥁","🎷","🎧","🎤","🎼","🎶","🎵","♪","♫","♩","♬","𝄞","🎸","🪕","🪘","🪗","📯"],
-  math:    ["∞","∑","π","∂","∫","∇","⊗","⊕","≃","≡","≤","≥","ℤ","ℝ","ℂ","⚛","⟨","⟩","⊂","⊃"],
-  cards:   ["♠","♥","♦","♣","♟","♞","♜","♝","♛","♚","🃏","🎴","👑","⚙️","⚑","🧩","🔷","🔶","⬣","⬡"],
-  space:   ["🌌","🌙","☀️","⭐","🌟","🪐","☄️","🌍","🌎","🌏","🌑","🛰️","🚀","🛸","🧿","🌠","🔭","🧬","⚡","🔥"],
-  food:    ["☕","🍵","🍫","🍪","🍎","🍋","🍇","🍓","🥐","🍞","🧀","🥑","🌶️","🥕","🍅","🫐","🍯","🍷","🧊","🍬"]
-};
+  const THEMES = {
+    animals: ["🐱","🐶","🦊","🐼","🐯","🐸","🐵","🐰","🦁","🐨","🐧","🦉","🐙","🐢","🦋","🐝","🦒","🦓","🦝","🦔"],
+    music:   ["🎹","🎻","🎺","🥁","🎷","🎧","🎤","🎼","🎶","🎵","♪","♫","♩","♬","𝄞","🎸","🪕","🪘","🪗","📯"],
+    math:    ["∞","∑","π","∂","∫","∇","⊗","⊕","≃","≡","≤","≥","ℤ","ℝ","ℂ","⚛","⟨","⟩","⊂","⊃"],
+    cards:   ["♠","♥","♦","♣","♟","♞","♜","♝","♛","♚","🃏","🎴","👑","⚙️","⚑","🧩","🔷","🔶","⬣","⬡"],
+    space:   ["🌌","🌙","☀️","⭐","🌟","🪐","☄️","🌍","🌎","🌏","🌑","🛰️","🚀","🛸","🧿","🌠","🔭","🧬","⚡","🔥"],
+    food:    ["☕","🍵","🍫","🍪","🍎","🍋","🍇","🍓","🥐","🍞","🧀","🥑","🌶️","🥕","🍅","🫐","🍯","🍷","🧊","🍬"]
+  };
 
-// Use Twemoji SVG from CDN to make icons consistent + scalable
-const USE_TWEMOJI = true;  // set false if you prefer plain emoji text
+  // Use Twemoji SVG from CDN for consistent scalable icons
+  const USE_TWEMOJI = true;
 
-  // ≤ 2 turns
-  const MAX_TURNS = 2;
+  function emojiToTwemojiSvgUrl(emoji) {
+    // Convert to codepoints and strip variation selectors (FE0F/FE0E)
+    const cps = [];
+    for (const ch of emoji) {
+      const cp = ch.codePointAt(0);
+      if (cp === 0xFE0F || cp === 0xFE0E) continue;
+      cps.push(cp.toString(16));
+    }
+    return `https://twemoji.maxcdn.com/v/latest/svg/${cps.join("-")}.svg`;
+  }
 
+  function looksLikeEmoji(symbol) {
+    return /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(symbol);
+  }
+
+  function renderSymbolHTML(symbol) {
+    if (!USE_TWEMOJI) return `<span class="llk-symbol">${symbol}</span>`;
+    if (!looksLikeEmoji(symbol)) return `<span class="llk-symbol">${symbol}</span>`;
+    const url = emojiToTwemojiSvgUrl(symbol);
+    return `<span class="llk-symbol"><img src="${url}" alt="${symbol}" loading="lazy"></span>`;
+  }
+
+  // =========================================================
   // DOM
+  // =========================================================
   const boardEl = document.getElementById("llk-board");
   const statusEl = document.getElementById("llk-status");
   const newBtn = document.getElementById("llk-new");
   const shuffleBtn = document.getElementById("llk-shuffle");
   const sizeSel = document.getElementById("llk-size");
   const themeSel = document.getElementById("llk-theme");
-  const canvas = document.getElementById("llk-canvas");
-  const ctx = canvas.getContext("2d");
 
-  const wrapEl = document.getElementById("llk-wrap");
+  const canvas = document.getElementById("llk-canvas");
+  const ctx = canvas ? canvas.getContext("2d") : null;
+
   const stageEl = document.getElementById("llk-stage");
 
   const zoomOutBtn = document.getElementById("llk-zoom-out");
   const zoomInBtn = document.getElementById("llk-zoom-in");
   const zoomResetBtn = document.getElementById("llk-zoom-reset");
 
+  if (!boardEl || !statusEl || !sizeSel || !themeSel || !canvas || !ctx || !stageEl) {
+    // Required elements not present on this page
+    return;
+  }
+
+  // =========================================================
+  // Zoom
+  // =========================================================
   let zoom = 1.0;
 
-function applyZoom() {
-  if (!stageEl) return;
-  stageEl.style.setProperty("--llk-zoom", zoom);
-  stageEl.style.transform = `scale(${zoom})`;
-  resizeCanvasToBoard();
-}
+  function resizeCanvasToBoard() {
+    const rect = stageEl.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * devicePixelRatio);
+    canvas.height = Math.round(rect.height * devicePixelRatio);
+    canvas.style.width = rect.width + "px";
+    canvas.style.height = rect.height + "px";
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    clearPath();
+  }
 
-zoomInBtn?.addEventListener("click", () => {
-  zoom = Math.min(2.0, zoom + 0.1);
-  applyZoom();
-});
+  function applyZoom() {
+    stageEl.style.transform = `scale(${zoom})`;
+    resizeCanvasToBoard();
+  }
 
-zoomOutBtn?.addEventListener("click", () => {
-  zoom = Math.max(0.4, zoom - 0.1);
-  applyZoom();
-});
+  zoomInBtn?.addEventListener("click", () => {
+    zoom = Math.min(2.0, zoom + 0.1);
+    applyZoom();
+  });
 
-zoomResetBtn?.addEventListener("click", () => {
-  zoom = 1.0;
-  applyZoom();
-});
+  zoomOutBtn?.addEventListener("click", () => {
+    zoom = Math.max(0.4, zoom - 0.1);
+    applyZoom();
+  });
 
-  
+  zoomResetBtn?.addEventListener("click", () => {
+    zoom = 1.0;
+    applyZoom();
+  });
+
+  // =========================================================
   // State
-  let R = 8, C = 10;                 // visible grid size INCLUDING padding ring
-  let grid = [];                     // grid[r][c] = null or symbol
-  let first = null, second = null;   // selected tiles
+  // =========================================================
+  let R = 8, C = 8;               // full grid including padding ring
+  let grid = [];
+  let first = null, second = null;
 
   function setStatus(msg) { statusEl.textContent = msg; }
 
   function parseSize() {
     const [r,c] = sizeSel.value.split("x").map(Number);
     R = r; C = c;
-    if (R < 4 || C < 4) {
-      // need room for padding ring + interior
-      R = Math.max(R, 4);
-      C = Math.max(C, 4);
-    }
+    R = Math.max(R, 4);
+    C = Math.max(C, 4);
   }
 
   function currentSymbols() {
@@ -96,7 +131,6 @@ zoomResetBtn?.addEventListener("click", () => {
     return a;
   }
 
-  // Border ring is always empty: r=0, r=R-1, c=0, c=C-1
   function isBorder(r,c) {
     return r===0 || c===0 || r===R-1 || c===C-1;
   }
@@ -119,36 +153,21 @@ zoomResetBtn?.addEventListener("click", () => {
       for (let c=0; c<C; c++) {
         const v = grid[r][c];
         const tile = document.createElement("div");
-
-        // Border ring is shown as empty, visually subtle
         const empty = (v === null);
+
         tile.className = "tile" + (empty ? " empty" : "");
         tile.dataset.r = r;
         tile.dataset.c = c;
         tile.innerHTML = empty ? "" : renderSymbolHTML(v);
 
-        // Click only on non-empty interior tiles
         tile.addEventListener("click", () => onTileClick(tile));
         boardEl.appendChild(tile);
       }
     }
   }
 
-function resizeCanvasToBoard() {
-  const stage = document.getElementById("llk-stage");
-  if (!stage) return;
-
-  const rect = stage.getBoundingClientRect();
-  canvas.width = Math.round(rect.width * devicePixelRatio);
-  canvas.height = Math.round(rect.height * devicePixelRatio);
-  canvas.style.width = rect.width + "px";
-  canvas.style.height = rect.height + "px";
-  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-  clearPath();
-}
-
   function clearPath() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   function getTileSizePx() {
@@ -158,19 +177,19 @@ function resizeCanvasToBoard() {
     return {w: rect.width, h: rect.height};
   }
 
+  // Note: these constants should match your CSS (gap=2px, padding=6px in the latest CSS I gave)
   function cellCenterPx(r,c) {
-    // depends on CSS: padding 14px, gap 8px
     const tile = getTileSizePx();
-    if (!tile) return {x:0,y:0};
-    const gap = 8;
-    const pad = 14;
+    if (!tile) return {x:0, y:0};
+
+    const gap = 2;
+    const pad = 6;
     const x = (c + 0.5) * (tile.w + gap) - gap/2 + pad;
     const y = (r + 0.5) * (tile.h + gap) - gap/2 + pad;
     return {x,y};
   }
 
   function drawPath(points) {
-    // points: array of {r,c} in [0..R-1],[0..C-1]
     clearPath();
     ctx.lineWidth = 3;
     ctx.strokeStyle = "rgba(0,0,0,0.55)";
@@ -178,7 +197,7 @@ function resizeCanvasToBoard() {
 
     const p0 = cellCenterPx(points[0].r, points[0].c);
     ctx.moveTo(p0.x, p0.y);
-    for (let i=1;i<points.length;i++) {
+    for (let i=1; i<points.length; i++) {
       const pi = cellCenterPx(points[i].r, points[i].c);
       ctx.lineTo(pi.x, pi.y);
     }
@@ -188,51 +207,11 @@ function resizeCanvasToBoard() {
 
   // =========================================================
   // PBC line-clear checks
-  // In same row: there are two wrap paths between c1 and c2.
-  // In same col: two wrap paths between r1 and r2.
-  // We accept if either direction is clear (through empties),
-  // allowing endpoints as occupied (selected tiles).
   // =========================================================
-
   function isEmptyCell(r,c, p1, p2) {
     if (p1 && r===p1.r && c===p1.c) return true;
     if (p2 && r===p2.r && c===p2.c) return true;
     return grid[r][c] === null;
-  }
-
-  function lineClearRowPBC(r, c1, c2, p1, p2) {
-    if (c1 === c2) return {ok:true, path:[{r,c:c1},{r,c:c2}]};
-
-    // forward direction from c1 to c2
-    let okF = true;
-    let c = c1;
-    const pathF = [{r,c:c1}];
-    while (true) {
-      c = (c + 1) % C;
-      if (c === c2) break;
-      if (!isEmptyCell(r,c,p1,p2)) { okF=false; break; }
-    }
-    if (okF) pathF.push({r,c:c2});
-
-    // backward direction
-    let okB = true;
-    c = c1;
-    const pathB = [{r,c:c1}];
-    while (true) {
-      c = (c - 1 + C) % C;
-      if (c === c2) break;
-      if (!isEmptyCell(r,c,p1,p2)) { okB=false; break; }
-    }
-    if (okB) pathB.push({r,c:c2});
-
-    if (!okF && !okB) return {ok:false, path:[]};
-
-    // choose shorter for drawing
-    const chosen = (okF && okB)
-      ? (stepsRow(c1,c2,+1) <= stepsRow(c1,c2,-1) ? pathF : pathB)
-      : (okF ? pathF : pathB);
-
-    return {ok:true, path:chosen};
   }
 
   function stepsRow(c1,c2,dir) {
@@ -245,12 +224,53 @@ function resizeCanvasToBoard() {
     return steps;
   }
 
+  function stepsCol(r1,r2,dir) {
+    let steps = 0, r = r1;
+    while (r !== r2) {
+      r = (r + dir + R) % R;
+      steps++;
+      if (steps > R+2) break;
+    }
+    return steps;
+  }
+
+  function lineClearRowPBC(r, c1, c2, p1, p2) {
+    if (c1 === c2) return {ok:true, path:[{r,c:c1},{r,c:c2}]};
+
+    // forward
+    let okF = true, c = c1;
+    const pathF = [{r,c:c1}];
+    while (true) {
+      c = (c + 1) % C;
+      if (c === c2) break;
+      if (!isEmptyCell(r,c,p1,p2)) { okF=false; break; }
+    }
+    if (okF) pathF.push({r,c:c2});
+
+    // backward
+    let okB = true; c = c1;
+    const pathB = [{r,c:c1}];
+    while (true) {
+      c = (c - 1 + C) % C;
+      if (c === c2) break;
+      if (!isEmptyCell(r,c,p1,p2)) { okB=false; break; }
+    }
+    if (okB) pathB.push({r,c:c2});
+
+    if (!okF && !okB) return {ok:false, path:[]};
+
+    const chosen = (okF && okB)
+      ? (stepsRow(c1,c2,+1) <= stepsRow(c1,c2,-1) ? pathF : pathB)
+      : (okF ? pathF : pathB);
+
+    return {ok:true, path:chosen};
+  }
+
   function lineClearColPBC(c, r1, r2, p1, p2) {
     if (r1 === r2) return {ok:true, path:[{r:r1,c},{r:r2,c}]};
 
-    // forward direction from r1 to r2
-    let okF = true;
-    let r = r1;
+    // forward
+    let okF = true, r = r1;
     const pathF = [{r:r1,c}];
     while (true) {
       r = (r + 1) % R;
@@ -259,9 +279,8 @@ function resizeCanvasToBoard() {
     }
     if (okF) pathF.push({r:r2,c});
 
-    // backward direction
-    let okB = true;
-    r = r1;
+    // backward
+    let okB = true; r = r1;
     const pathB = [{r:r1,c}];
     while (true) {
       r = (r - 1 + R) % R;
@@ -279,23 +298,12 @@ function resizeCanvasToBoard() {
     return {ok:true, path:chosen};
   }
 
-  function stepsCol(r1,r2,dir) {
-    let steps = 0, r = r1;
-    while (r !== r2) {
-      r = (r + dir + R) % R;
-      steps++;
-      if (steps > R+2) break;
-    }
-    return steps;
-  }
-
   function lineClearPBC(pA, pB, p1, p2) {
     if (pA.r === pB.r) return lineClearRowPBC(pA.r, pA.c, pB.c, p1, p2);
     if (pA.c === pB.c) return lineClearColPBC(pA.c, pA.r, pB.r, p1, p2);
     return {ok:false, path:[]};
   }
 
-  // Compress polyline points if collinear
   function compress(points) {
     const out = [points[0]];
     for (let i=1;i<points.length-1;i++) {
@@ -307,7 +315,6 @@ function resizeCanvasToBoard() {
     return out;
   }
 
-  // Find path ≤ 2 turns with PBC
   function findPath(p1, p2) {
     // 0-turn
     if (p1.r===p2.r || p1.c===p2.c) {
@@ -315,7 +322,7 @@ function resizeCanvasToBoard() {
       if (seg.ok) return compress(seg.path);
     }
 
-    // 1-turn: corners (p1.r, p2.c) and (p2.r, p1.c)
+    // 1-turn
     const corner1 = {r: p1.r, c: p2.c};
     if (isEmptyCell(corner1.r,corner1.c,p1,p2)) {
       const s1 = lineClearPBC(p1, corner1, p1, p2);
@@ -330,7 +337,7 @@ function resizeCanvasToBoard() {
       if (s1.ok && s2.ok) return compress([p1, corner2, p2]);
     }
 
-    // 2-turn: scan candidate intermediate rows
+    // 2-turn: scan rows
     for (let r=0; r<R; r++) {
       const a = {r, c: p1.c};
       const b = {r, c: p2.c};
@@ -342,7 +349,7 @@ function resizeCanvasToBoard() {
       }
     }
 
-    // 2-turn: scan candidate intermediate cols
+    // 2-turn: scan cols
     for (let c=0; c<C; c++) {
       const a = {r: p1.r, c};
       const b = {r: p2.r, c};
@@ -360,18 +367,14 @@ function resizeCanvasToBoard() {
   // =========================================================
   // Game mechanics
   // =========================================================
-
   function newGame() {
     parseSize();
     makeEmptyGrid();
     first = second = null;
 
-    // Fill only interior (1..R-2, 1..C-2). Border ring empty.
     const innerR = R - 2;
     const innerC = C - 2;
     const total = innerR * innerC;
-
-    // If odd, leave one interior empty to keep pairing (or adjust size).
     const usable = (total % 2 === 0) ? total : total - 1;
     const pairs = usable / 2;
 
@@ -383,17 +386,15 @@ function resizeCanvasToBoard() {
     }
     shuffleArray(pool);
 
-    // Fill interior
     let k = 0;
     for (let r=1; r<=R-2; r++) {
       for (let c=1; c<=C-2; c++) {
-        if (k < pool.length) grid[r][c] = pool[k++];
-        else grid[r][c] = null; // if total was odd, one empty
+        grid[r][c] = (k < pool.length) ? pool[k++] : null;
       }
     }
 
     renderBoard();
-    resizeCanvasToBoard();
+    applyZoom();  // ensures canvas matches stage (esp. after size changes)
     setStatus("Pick two identical tiles (PBC + padding ring).");
   }
 
@@ -412,7 +413,17 @@ function resizeCanvasToBoard() {
     }
     first = second = null;
     renderBoard();
+    applyZoom();
     setStatus("Shuffled. Continue.");
+  }
+
+  function resetSelectionSoon() {
+    setTimeout(() => {
+      if (first) first.el.classList.remove("selected");
+      if (second) second.el.classList.remove("selected");
+      first = second = null;
+      setStatus("Pick two identical tiles.");
+    }, 220);
   }
 
   function onTileClick(tileEl) {
@@ -420,11 +431,9 @@ function resizeCanvasToBoard() {
     const c = Number(tileEl.dataset.c);
     const v = grid[r][c];
 
-    // only allow clicks on non-empty interior
     if (v === null) return;
     if (isBorder(r,c)) return;
 
-    // toggle off
     if (first && first.r===r && first.c===c) {
       tileEl.classList.remove("selected");
       first = null;
@@ -456,7 +465,6 @@ function resizeCanvasToBoard() {
       return resetSelectionSoon();
     }
 
-    // success
     drawPath(path);
     grid[first.r][first.c] = null;
     grid[second.r][second.c] = null;
@@ -466,56 +474,20 @@ function resizeCanvasToBoard() {
     first = second = null;
 
     renderBoard();
+    applyZoom();
 
     const rem = remainingTiles();
     if (rem === 0) setStatus("🎉 Cleared! New Game?");
     else setStatus(`Nice. ${rem} tiles left.`);
   }
 
-  function resetSelectionSoon() {
-    setTimeout(() => {
-      if (first) first.el.classList.remove("selected");
-      if (second) second.el.classList.remove("selected");
-      first = second = null;
-      setStatus("Pick two identical tiles.");
-    }, 220);
-  }
-
-
-const USE_TWEMOJI = true; // keep ON for consistent icons
-
-function emojiToTwemojiSvgUrl(emoji) {
-  // Build codepoints while stripping variation selectors (FE0F/FE0E)
-  // Keep ZWJ sequences (200D) as Twemoji expects.
-  const cps = [];
-  for (const ch of emoji) {
-    const cp = ch.codePointAt(0);
-    if (cp === 0xFE0F || cp === 0xFE0E) continue; // strip VS16/VS15
-    cps.push(cp.toString(16));
-  }
-  return `https://twemoji.maxcdn.com/v/latest/svg/${cps.join("-")}.svg`;
-}
-
-function looksLikeEmoji(symbol) {
-  // true for most emoji blocks + dingbats + misc symbols
-  return /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(symbol);
-}
-
-function renderSymbolHTML(symbol) {
-  if (!USE_TWEMOJI) return `<span class="llk-symbol">${symbol}</span>`;
-  if (!looksLikeEmoji(symbol)) return `<span class="llk-symbol">${symbol}</span>`;
-  const url = emojiToTwemojiSvgUrl(symbol);
-  return `<span class="llk-symbol"><img src="${url}" alt="${symbol}" loading="lazy"></span>`;
-}
-
   // Events
   newBtn?.addEventListener("click", newGame);
   shuffleBtn?.addEventListener("click", shuffleRemaining);
   sizeSel?.addEventListener("change", newGame);
   themeSel?.addEventListener("change", newGame);
-
-  window.addEventListener("resize", resizeCanvasToBoard);
+  window.addEventListener("resize", applyZoom);
 
   // Start
-  if (boardEl) newGame();
+  newGame();
 })();
