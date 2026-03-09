@@ -468,8 +468,16 @@ function newGame() {
   }
 
   renderBoard();
-  applyZoom();
+
+    if (C >= 32) zoom = 1.4;
+    else if (C >= 16) zoom = 1.15;
+    else zoom = 1.0;
+    applyZoom();
+
   setStatus("Pick two identical tiles (PBC + padding ring).");
+
+
+  
 }
 
   function shuffleRemaining() {
