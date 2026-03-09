@@ -30,6 +30,38 @@ const USE_TWEMOJI = true;  // set false if you prefer plain emoji text
   const canvas = document.getElementById("llk-canvas");
   const ctx = canvas.getContext("2d");
 
+  const wrapEl = document.getElementById("llk-wrap");
+  const stageEl = document.getElementById("llk-stage");
+
+  const zoomOutBtn = document.getElementById("llk-zoom-out");
+  const zoomInBtn = document.getElementById("llk-zoom-in");
+  const zoomResetBtn = document.getElementById("llk-zoom-reset");
+
+  let zoom = 1.0;
+
+function applyZoom() {
+  if (!stageEl) return;
+  stageEl.style.setProperty("--llk-zoom", zoom);
+  stageEl.style.transform = `scale(${zoom})`;
+  resizeCanvasToBoard();
+}
+
+zoomInBtn?.addEventListener("click", () => {
+  zoom = Math.min(2.0, zoom + 0.1);
+  applyZoom();
+});
+
+zoomOutBtn?.addEventListener("click", () => {
+  zoom = Math.max(0.4, zoom - 0.1);
+  applyZoom();
+});
+
+zoomResetBtn?.addEventListener("click", () => {
+  zoom = 1.0;
+  applyZoom();
+});
+
+  
   // State
   let R = 8, C = 10;                 // visible grid size INCLUDING padding ring
   let grid = [];                     // grid[r][c] = null or symbol
@@ -80,7 +112,7 @@ const USE_TWEMOJI = true;  // set false if you prefer plain emoji text
   }
 
   function renderBoard() {
-    boardEl.style.gridTemplateColumns = `repeat(${C}, 1fr)`;
+    boardEl.style.gridTemplateColumns = `repeat(${C}, minmax(0, 1fr))`;
     boardEl.innerHTML = "";
 
     for (let r=0; r<R; r++) {
@@ -102,15 +134,18 @@ const USE_TWEMOJI = true;  // set false if you prefer plain emoji text
     }
   }
 
-  function resizeCanvasToBoard() {
-    const rect = boardEl.getBoundingClientRect();
-    canvas.width = Math.round(rect.width * devicePixelRatio);
-    canvas.height = Math.round(rect.height * devicePixelRatio);
-    canvas.style.width = rect.width + "px";
-    canvas.style.height = rect.height + "px";
-    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-    clearPath();
-  }
+function resizeCanvasToBoard() {
+  const stage = document.getElementById("llk-stage");
+  if (!stage) return;
+
+  const rect = stage.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * devicePixelRatio);
+  canvas.height = Math.round(rect.height * devicePixelRatio);
+  canvas.style.width = rect.width + "px";
+  canvas.style.height = rect.height + "px";
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  clearPath();
+}
 
   function clearPath() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -447,25 +482,30 @@ const USE_TWEMOJI = true;  // set false if you prefer plain emoji text
   }
 
 
-  function emojiToTwemojiSvgUrl(emoji) {
-  // Convert emoji to codepoint(s) like "1f60a" or "1f1eb-1f1f7"
-  const codepoints = Array.from(emoji)
-    .map(ch => ch.codePointAt(0).toString(16))
-    .join("-");
-  return `https://twemoji.maxcdn.com/v/latest/svg/${codepoints}.svg`;
+const USE_TWEMOJI = true; // keep ON for consistent icons
+
+function emojiToTwemojiSvgUrl(emoji) {
+  // Build codepoints while stripping variation selectors (FE0F/FE0E)
+  // Keep ZWJ sequences (200D) as Twemoji expects.
+  const cps = [];
+  for (const ch of emoji) {
+    const cp = ch.codePointAt(0);
+    if (cp === 0xFE0F || cp === 0xFE0E) continue; // strip VS16/VS15
+    cps.push(cp.toString(16));
+  }
+  return `https://twemoji.maxcdn.com/v/latest/svg/${cps.join("-")}.svg`;
+}
+
+function looksLikeEmoji(symbol) {
+  // true for most emoji blocks + dingbats + misc symbols
+  return /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(symbol);
 }
 
 function renderSymbolHTML(symbol) {
-  if (!USE_TWEMOJI) {
-    return `<span class="llk-symbol">${symbol}</span>`;
-  }
-  // Twemoji works best for actual emoji; for pure math symbols we keep text
-  const looksLikeEmoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(symbol);
-  if (!looksLikeEmoji) {
-    return `<span class="llk-symbol">${symbol}</span>`;
-  }
+  if (!USE_TWEMOJI) return `<span class="llk-symbol">${symbol}</span>`;
+  if (!looksLikeEmoji(symbol)) return `<span class="llk-symbol">${symbol}</span>`;
   const url = emojiToTwemojiSvgUrl(symbol);
-  return `<span class="llk-symbol"><img src="${url}" alt="${symbol}"></span>`;
+  return `<span class="llk-symbol"><img src="${url}" alt="${symbol}" loading="lazy"></span>`;
 }
 
   // Events
