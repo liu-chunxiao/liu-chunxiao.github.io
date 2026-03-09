@@ -340,40 +340,50 @@ footer {
   width: min(760px, 95%);
 }
 
+/* Board: smaller gaps */
 .lianliankan .board {
   display: grid;
-  gap: 8px;
+  gap: 4px;                     /* was 8px */
   background: rgba(255,255,255,0.55);
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 14px;
-  padding: 14px;
+  padding: 10px;                /* was 14px */
 }
 
+/* Tiles: perfect squares + sharp corners */
 .lianliankan .tile {
-  user-select: none;
-  height: 52px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.15);
+  aspect-ratio: 1 / 1;          /* makes it a square */
+  height: auto;                 /* remove fixed height */
+  border-radius: 0;             /* sharp corners */
+  border: 1px solid rgba(0,0,0,0.18);
   background: #ffffff;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Zen Maru Gothic', sans-serif;
-  font-size: 1.35rem;
   cursor: pointer;
+  user-select: none;
   transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 
-.lianliankan .tile:hover {
-  transform: translateY(-1px);
-  border-color: rgba(0,0,0,0.35);
+/* Symbol scaling: make the "logo" fill the square nicely */
+.lianliankan .tile .llk-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 92%;
+  height: 92%;
+  font-size: clamp(16px, 3.2vw, 32px); /* auto-rescale with screen */
+  line-height: 1;
 }
 
-.lianliankan .tile.selected {
-  border-color: rgba(0,0,0,0.7);
-  outline: 2px solid rgba(0,0,0,0.15);
+/* If we render Twemoji SVG <img>, it will scale cleanly */
+.lianliankan .tile .llk-symbol img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
+/* Empty cells remain subtle */
 .lianliankan .tile.empty {
   background: transparent;
   border: 1px dashed rgba(0,0,0,0.10);
