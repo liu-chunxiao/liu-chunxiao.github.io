@@ -191,6 +191,60 @@ function generateDistinctColors(n) {
   return mixed.slice(0, n);
 }
 
+
+  function hasAnyMove() {
+  // Build map from symbol -> positions
+  const mp = new Map();
+  for (let r = 1; r <= R - 2; r++) {
+    for (let c = 1; c <= C - 2; c++) {
+      const v = grid[r][c];
+      if (v === null) continue;
+      if (!mp.has(v)) mp.set(v, []);
+      mp.get(v).push({ r, c });
+    }
+  }
+
+  // Quick check: if any symbol appears at least twice, test pairs.
+  // We stop as soon as we find one valid match.
+  for (const [v, arr] of mp.entries()) {
+    if (arr.length < 2) continue;
+
+    // Small pruning: test a limited number of pairs first
+    // (usually enough to detect a move quickly)
+    const limit = Math.min(arr.length, 30);
+
+    for (let i = 0; i < limit; i++) {
+      for (let j = i + 1; j < limit; j++) {
+        const p1 = arr[i];
+        const p2 = arr[j];
+        const path = findPath(p1, p2);
+        if (path) return true;
+      }
+    }
+
+    // If not found, fall back to full check for that symbol
+    for (let i = 0; i < arr.length; i++) {
+      for (let j = i + 1; j < arr.length; j++) {
+        const p1 = arr[i];
+        const p2 = arr[j];
+        const path = findPath(p1, p2);
+        if (path) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function autoShuffleIfStuck() {
+  const rem = remainingTiles();
+  if (rem === 0) return;
+
+  if (!hasAnyMove()) {
+    shuffleRemaining();
+    setStatus("No moves available — auto-shuffled.");
+  }
+}
   
 
   // =========================================================
@@ -534,6 +588,107 @@ function generateDistinctColors(n) {
     return null;
   }
 
+  function pbcDelta(a, b, L) {
+  // minimal signed displacement on a ring of length L
+  // returns value in (-L/2, L/2]
+  let d = b - a;
+  if (d >  L/2) d -= L;
+  if (d <= -L/2) d += L;
+  return d;
+}
+
+function segmentWrapPoints(p1, p2) {
+  // p1, p2 are points in pixel coords {x,y} in the stage coordinate system
+  // returns array of polylines; each polyline is an array of points.
+  // If no wrap, returns one polyline [p1,p2].
+  //
+  // We decide wrap direction by comparing displacement to half-width/half-height.
+  const rect = boardEl.getBoundingClientRect();
+  const stageRect = stageEl.getBoundingClientRect();
+
+  // Convert board size in pixels in stage coords:
+  const W = stageRect.width;
+  const H = stageRect.height;
+
+  const dx = p2.x - p1.x;
+  const dy = p2.y - p1.y;
+
+  // If mostly horizontal segment (same row): handle horizontal wrap
+  if (Math.abs(dy) < 1e-6) {
+    if (Math.abs(dx) <= W / 2) return [[p1, p2]];
+    // wrap: go to nearest edge and reappear
+    if (dx > 0) {
+      // p2 is to the right far away -> better to go left across boundary
+      // so we draw p1 -> left edge, then right edge -> p2
+      return [
+        [p1, {x: 0, y: p1.y}],
+        [{x: W, y: p2.y}, p2]
+      ];
+    } else {
+      // dx < 0: p2 far left -> go right across boundary
+      return [
+        [p1, {x: W, y: p1.y}],
+        [{x: 0, y: p2.y}, p2]
+      ];
+    }
+  }
+
+  // If mostly vertical segment (same col): handle vertical wrap
+  if (Math.abs(dx) < 1e-6) {
+    if (Math.abs(dy) <= H / 2) return [[p1, p2]];
+    if (dy > 0) {
+      // p2 far below -> go up across boundary
+      return [
+        [p1, {x: p1.x, y: 0}],
+        [{x: p2.x, y: H}, p2]
+      ];
+    } else {
+      // p2 far above -> go down across boundary
+      return [
+        [p1, {x: p1.x, y: H}],
+        [{x: p2.x, y: 0}, p2]
+      ];
+    }
+  }
+
+  // Should not happen: we only pass axis-aligned segments here.
+  return [[p1, p2]];
+}
+
+function drawPathPBC(pathCells) {
+  // pathCells: array of {r,c} corners (axis-aligned polyline)
+  // We draw each segment, but split it if it wraps under PBC.
+
+  clearPath();
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(0,0,0,0.65)";
+  ctx.lineJoin = "miter";
+  ctx.lineCap = "butt";
+
+  // Convert each cell to pixel center in stage coords
+  const pts = pathCells.map(p => cellCenterPx(p.r, p.c));
+
+  // Draw segment by segment, splitting wrapped segments
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+
+    const polylines = segmentWrapPoints(a, b);
+    for (const line of polylines) {
+      ctx.beginPath();
+      ctx.moveTo(line[0].x, line[0].y);
+      for (let j = 1; j < line.length; j++) {
+        ctx.lineTo(line[j].x, line[j].y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // keep the line visible a bit longer than before
+  setTimeout(clearPath, 420);
+}
+
   // =========================================================
   // Game mechanics
   // =========================================================
@@ -588,7 +743,7 @@ function newGame() {
 
   setStatus("Pick two identical tiles (PBC + padding ring).");
 
-
+  autoShuffleIfStuck();
   
 }
 
@@ -608,6 +763,7 @@ function newGame() {
     first = second = null;
     renderBoard();
     applyZoom();
+    
     setStatus("Shuffled. Continue.");
   }
 
@@ -659,7 +815,7 @@ function newGame() {
       return resetSelectionSoon();
     }
 
-    drawPath(path);
+    drawPathPBC(path);
     grid[first.r][first.c] = null;
     grid[second.r][second.c] = null;
 
@@ -669,6 +825,7 @@ function newGame() {
 
     renderBoard();
     applyZoom();
+    
 
     const rem = remainingTiles();
     if (rem === 0) setStatus("🎉 Cleared! New Game?");
