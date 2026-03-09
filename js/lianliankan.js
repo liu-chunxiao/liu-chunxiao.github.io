@@ -46,21 +46,16 @@ function renderSymbolHTML(symbol) {
 }
 
 
-  function desiredTypeCount() {
-  // Interior sizes: (R-2)×(C-2). Pairs = usable/2.
+function desiredTypeCount() {
   const innerR = R - 2, innerC = C - 2;
   const total = innerR * innerC;
   const usable = (total % 2 === 0) ? total : total - 1;
   const pairs = usable / 2;
 
-  // Hardness: more distinct types for larger boards
-  // 8×8 -> interior 6×6 -> 18 tiles pairs -> max 18
-  // 16×16 -> interior 14×14 -> 98 pairs
-  // 32×32 -> interior 30×30 -> 450 pairs
   let target;
-  if (C <= 8) target = 14;        // close to max 18
-  else if (C <= 16) target = 60;  // enough variety
-  else target = 110;              // 64–100+ as you suggested
+  if (C <= 8) target = 16;
+  else if (C <= 16) target = 36;
+  else target = 63; // <= 63 (EGA64 minus white)
 
   return Math.min(target, pairs);
 }
@@ -147,63 +142,56 @@ function mulberry32(seed) {
  *
  * This avoids the “greens look the same” problem much better than even hue stepping.
  */
-function generateDistinctColors(n, seed = 12345) {
-  const rand = mulberry32(seed);
 
-  // Candidate generation:
-  // Avoid very light colors (hard to see on white tiles) and very dark ones (too heavy).
-  // Keep saturation fairly high for discrimination.
-  const CANDIDATES = Math.max(2000, n * 80);
-  const candidates = [];
 
-  for (let i=0; i<CANDIDATES; i++) {
-    const h = rand() * 360;
-
-    // Slightly vary saturation/lightness but keep within discriminable range.
-    const s = 62 + rand() * 28;       // 62..90
-    const l = 42 + rand() * 26;       // 42..68
-
-    const hex = hslToHex(h, s, l);
-    const {r,g,b} = hexToRgb(hex);
-    const lab = rgbToLab(r,g,b);
-
-    candidates.push({ hex, lab });
-  }
-
-  // Greedy farthest-point selection in Lab space
-  const chosen = [];
-
-  // Start with a reasonably vivid color (max chroma-ish heuristic)
-  let startIdx = Math.floor(rand() * candidates.length);
-  chosen.push(candidates[startIdx]);
-  candidates.splice(startIdx, 1);
-
-  while (chosen.length < n && candidates.length > 0) {
-    let bestIdx = 0;
-    let bestScore = -1;
-
-    for (let i=0; i<candidates.length; i++) {
-      const cand = candidates[i];
-      // score = min distance to chosen set
-      let minD = Infinity;
-      for (const c of chosen) {
-        const d = deltaE(cand.lab, c.lab);
-        if (d < minD) minD = d;
-        // small early exit speedup
-        if (minD < bestScore) break;
-      }
-      if (minD > bestScore) {
-        bestScore = minD;
-        bestIdx = i;
-      }
-    }
-
-    chosen.push(candidates[bestIdx]);
-    candidates.splice(bestIdx, 1);
-  }
-
-  return chosen.map(x => x.hex);
+  function rgbToHex(r,g,b){
+  return "#" + [r,g,b].map(v => v.toString(16).padStart(2,"0")).join("");
 }
+
+// Relative luminance (simple) to filter very pale colors if you want
+function relLuminance(hex){
+  const n = parseInt(hex.slice(1),16);
+  const r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+  // sRGB approx
+  return (0.2126*r + 0.7152*g + 0.0722*b) / 255;
+}
+
+function ega64PaletteMinusWhite(options = { removeVeryLight: true }) {
+  const levels = [0, 85, 170, 255];
+  const colors = [];
+  for (const r of levels) for (const g of levels) for (const b of levels) {
+    const hex = rgbToHex(r,g,b);
+    if (hex.toUpperCase() === "#FFFFFF") continue; // remove white
+    colors.push(hex);
+  }
+
+  // Optional: remove very light colors that are hard to distinguish on a white tile/background
+  // Tune threshold if needed. 0.92 removes near-whites while keeping light pastels.
+  const filtered = options.removeVeryLight
+    ? colors.filter(h => relLuminance(h) < 0.92)
+    : colors;
+
+  return filtered;
+}
+
+function generateDistinctColors(n) {
+  // Use EGA palette (minus white), then take first n.
+  // If we filtered too aggressively and have < n, fall back to unfiltered.
+  let base = ega64PaletteMinusWhite({ removeVeryLight: true });
+  if (base.length < n) base = ega64PaletteMinusWhite({ removeVeryLight: false });
+
+  // Deterministic ordering: shuffle by a fixed recipe so colors are nicely mixed
+  // (avoid having many similar hues adjacent in the palette)
+  const mixed = [];
+  const step = 17; // relatively prime-ish to 63/64 → good mixing
+  for (let i = 0; i < base.length; i++) {
+    mixed.push(base[(i * step) % base.length]);
+  }
+
+  return mixed.slice(0, n);
+}
+
+  
 
   // =========================================================
   // DOM
