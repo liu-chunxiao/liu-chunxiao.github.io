@@ -326,6 +326,7 @@ footer {
   border-radius:14px;
 }
 
+
 /* Stage holds BOTH canvas+board so zoom keeps them aligned */
 .lianliankan .llk-stage{
   position:relative;
@@ -344,13 +345,15 @@ footer {
 /* Board: smaller gaps and padding */
 .lianliankan .board{
   display:grid;
-  gap:2px;                  /* smaller spacing */
-  padding:6px;              /* smaller padding */
-  background:rgba(255,255,255,0.55);
-  border:1px solid rgba(0,0,0,0.08);
-  border-radius:14px;
-  width: fit-content;       /* board sizes to content; wrapper scrolls if needed */
-  z-index:1;
+  gap: 1px;
+  padding: 5px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 14px;
+
+  width: 100%;            /* IMPORTANT: occupy wrapper width */
+  max-width: 980px;       /* optional; keeps it sane on big screens */
+  margin: 0 auto;         /* center */
 }
 
 /* Tiles: square, sharp corners, prevent content from expanding them */
