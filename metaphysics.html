@@ -41,6 +41,55 @@
       We have no intention to talk philosophy. Just some fun stuff and physics!
       <br>
 
+      
+      <section class="lianliankan" id="lianliankan">
+
+        <h3>连连看 (Lianliankan)</h3>
+        <div class="game-bar">
+          <button id="llk-new">New Game</button>
+          <label>
+            Size:
+            <select id="llk-size">
+              <option value="8x10" selected>8 × 10 (easy)</option>
+              <option value="10x12">10 × 12 (medium)</option>
+              <option value="12x14">12 × 14 (hard)</option>
+            </select>
+          </label>
+          
+          <label>
+            Symbols:
+            <select id="llk-theme">
+              <option value="animals" selected>Animals</option>
+              <option value="music">Music</option>
+              <option value="math">Math / Physics</option>
+              <option value="cards">Cards / Chess</option>
+            </select>
+          </label>
+          
+          <button id="llk-shuffle">Shuffle</button>
+          
+          <span class="status" id="llk-status">Pick two identical tiles.</span>
+        
+        </div>
+        
+        <div class="board-wrap">
+          
+          <canvas class="path" id="llk-canvas"></canvas>
+          <div class="board" id="llk-board"></div>
+        </div>
+        
+        <div class="hint">
+          Rule: two identical tiles vanish if they can be connected through empty space by an axis-aligned path with ≤ 2 turns.
+          <br>
+          New behavior: <code>PBC</code> (torus) + one empty padding row/column is always present.
+        </div>/section>
+        
+        <!-- load the game logic -->
+        <script src="js/lianliankan.js" defer></script>
+
+
+
+      
       <div class="subsection" id="notes-slides">
         <h3>Slides</h3>
         <ul class="notes-list">
