@@ -15,7 +15,9 @@ body {
   padding: 20px;
 }
 
-
+.small-text {
+  font-size: 0.6em;
+}
 
 
 /* Header styling */
