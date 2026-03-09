@@ -5,12 +5,17 @@
   // PBC applies to connectivity: row/col wrap-around is allowed.
   // =========================================================
 
-  const THEMES = {
-    animals: ["🐱","🐶","🦊","🐼","🐯","🐸","🐵","🐰","🦁","🐨","🐧","🦉","🐙","🐢","🦋","🐝","🦒","🦓","🦝","🦔"],
-    music:   ["♪","♫","♩","♬","𝄞","🎼","🎹","🎻","🎺","🥁","🎷","🎧","🎤","🎶","🎵","⟡","✦","✧","❖","✿"],
-    math:    ["∞","∑","π","∂","∫","∇","⊗","⊕","≃","≡","≤","≥","ℤ","ℝ","ℂ","𝒢","ℋ","⟂","⟨⟩","⚛"],
-    cards:   ["♠","♥","♦","♣","♟","♞","♜","♝","♛","♚","⚙","⚑","✶","✷","✸","✹","✺","✻","✼","✽"]
-  };
+const THEMES = {
+  animals: ["🐱","🐶","🦊","🐼","🐯","🐸","🐵","🐰","🦁","🐨","🐧","🦉","🐙","🐢","🦋","🐝","🦒","🦓","🦝","🦔"],
+  music:   ["🎹","🎻","🎺","🥁","🎷","🎧","🎤","🎼","🎶","🎵","♪","♫","♩","♬","𝄞","🎸","🪕","🪘","🪗","📯"],
+  math:    ["∞","∑","π","∂","∫","∇","⊗","⊕","≃","≡","≤","≥","ℤ","ℝ","ℂ","⚛","⟨","⟩","⊂","⊃"],
+  cards:   ["♠","♥","♦","♣","♟","♞","♜","♝","♛","♚","🃏","🎴","👑","⚙️","⚑","🧩","🔷","🔶","⬣","⬡"],
+  space:   ["🌌","🌙","☀️","⭐","🌟","🪐","☄️","🌍","🌎","🌏","🌑","🛰️","🚀","🛸","🧿","🌠","🔭","🧬","⚡","🔥"],
+  food:    ["☕","🍵","🍫","🍪","🍎","🍋","🍇","🍓","🥐","🍞","🧀","🥑","🌶️","🥕","🍅","🫐","🍯","🍷","🧊","🍬"]
+};
+
+// Use Twemoji SVG from CDN to make icons consistent + scalable
+const USE_TWEMOJI = true;  // set false if you prefer plain emoji text
 
   // ≤ 2 turns
   const MAX_TURNS = 2;
@@ -88,7 +93,7 @@
         tile.className = "tile" + (empty ? " empty" : "");
         tile.dataset.r = r;
         tile.dataset.c = c;
-        tile.textContent = empty ? "" : v;
+        tile.innerHTML = empty ? "" : renderSymbolHTML(v);
 
         // Click only on non-empty interior tiles
         tile.addEventListener("click", () => onTileClick(tile));
@@ -440,6 +445,28 @@
       setStatus("Pick two identical tiles.");
     }, 220);
   }
+
+
+  function emojiToTwemojiSvgUrl(emoji) {
+  // Convert emoji to codepoint(s) like "1f60a" or "1f1eb-1f1f7"
+  const codepoints = Array.from(emoji)
+    .map(ch => ch.codePointAt(0).toString(16))
+    .join("-");
+  return `https://twemoji.maxcdn.com/v/latest/svg/${codepoints}.svg`;
+}
+
+function renderSymbolHTML(symbol) {
+  if (!USE_TWEMOJI) {
+    return `<span class="llk-symbol">${symbol}</span>`;
+  }
+  // Twemoji works best for actual emoji; for pure math symbols we keep text
+  const looksLikeEmoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(symbol);
+  if (!looksLikeEmoji) {
+    return `<span class="llk-symbol">${symbol}</span>`;
+  }
+  const url = emojiToTwemojiSvgUrl(symbol);
+  return `<span class="llk-symbol"><img src="${url}" alt="${symbol}"></span>`;
+}
 
   // Events
   newBtn?.addEventListener("click", newGame);
