@@ -425,58 +425,52 @@ function generateDistinctColors(n) {
   // =========================================================
   // Game mechanics
   // =========================================================
-  function newGame() {
-    parseSize();
-    applyFontSizeForGrid();
-    makeEmptyGrid();
-    first = second = null;
+function newGame() {
+  parseSize();
+  applyFontSizeForGrid();
+  makeEmptyGrid();
+  first = second = null;
 
-    const innerR = R - 2;
-    const innerC = C - 2;
-    const total = innerR * innerC;
-    const usable = (total % 2 === 0) ? total : total - 1;
-    const pairs = usable / 2;
+  // compute number of pairs based on interior area
+  const innerR = R - 2;
+  const innerC = C - 2;
+  const total = innerR * innerC;
+  const usable = (total % 2 === 0) ? total : total - 1;
+  const pairs = usable / 2;
 
-const pool = [];
+  // build pool of symbols / colors
+  const pool = [];
+  const theme = themeSel.value;
+  let types = [];
 
-const innerR = R - 2;
-const innerC = C - 2;
-const total = innerR * innerC;
-const usable = (total % 2 === 0) ? total : total - 1;
-const pairs = usable / 2;
-
-const theme = themeSel.value;
-let types = [];
-
-if (theme === "colors") {
-  const nTypes = desiredTypeCount();
-  const palette = generateDistinctColors(nTypes);
-  // encode as "color:" tokens
-  types = palette.map(c => `color:${c}`);
-} else {
-  const syms = currentSymbols(); // existing THEMES[...] arrays
-  // For non-color themes, also scale variety with grid size:
-  const nTypes = Math.min(desiredTypeCount(), syms.length);
-  types = syms.slice(0, nTypes);
-}
-
-for (let i = 0; i < pairs; i++) {
-  const t = types[i % types.length];
-  pool.push(t, t);
-}
-shuffleArray(pool);
-
-    let k = 0;
-    for (let r=1; r<=R-2; r++) {
-      for (let c=1; c<=C-2; c++) {
-        grid[r][c] = (k < pool.length) ? pool[k++] : null;
-      }
-    }
-
-    renderBoard();
-    applyZoom();  // ensures canvas matches stage (esp. after size changes)
-    setStatus("Pick two identical tiles (PBC + padding ring).");
+  if (theme === "colors") {
+    const nTypes = desiredTypeCount();
+    const palette = generateDistinctColors(nTypes);
+    types = palette.map(c => `color:${c}`);
+  } else {
+    const syms = currentSymbols();
+    const nTypes = Math.min(desiredTypeCount(), syms.length);
+    types = syms.slice(0, nTypes);
   }
+
+  for (let i = 0; i < pairs; i++) {
+    const t = types[i % types.length];
+    pool.push(t, t);
+  }
+  shuffleArray(pool);
+
+  // fill interior; border ring stays empty
+  let k = 0;
+  for (let r = 1; r <= R - 2; r++) {
+    for (let c = 1; c <= C - 2; c++) {
+      grid[r][c] = (k < pool.length) ? pool[k++] : null;
+    }
+  }
+
+  renderBoard();
+  applyZoom();
+  setStatus("Pick two identical tiles (PBC + padding ring).");
+}
 
   function shuffleRemaining() {
     const pos = [];
