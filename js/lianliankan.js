@@ -28,16 +28,58 @@
     return `https://twemoji.maxcdn.com/v/latest/svg/${cps.join("-")}.svg`;
   }
 
-  function looksLikeEmoji(symbol) {
-    return /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(symbol);
-  }
+function isTwemojiEmoji(symbol) {
+  // Twemoji is reliable for real emoji blocks; NOT for musical note characters etc.
+  // Allow: astral-plane emoji (>= 0x1F000), ZWJ sequences, and symbols with variation selectors.
+  const s = symbol;
+  if (s.includes("\u200D")) return true;              // ZWJ
+  if (s.includes("\uFE0F") || s.includes("\uFE0E")) return true; // variation selector
+  const cps = Array.from(s).map(ch => ch.codePointAt(0));
+  return cps.some(cp => cp >= 0x1F000);
+}
 
-  function renderSymbolHTML(symbol) {
-    if (!USE_TWEMOJI) return `<span class="llk-symbol">${symbol}</span>`;
-    if (!looksLikeEmoji(symbol)) return `<span class="llk-symbol">${symbol}</span>`;
-    const url = emojiToTwemojiSvgUrl(symbol);
-    return `<span class="llk-symbol"><img src="${url}" alt="${symbol}" loading="lazy"></span>`;
+function renderSymbolHTML(symbol) {
+  if (!USE_TWEMOJI) return `<span class="llk-symbol">${symbol}</span>`;
+  if (!isTwemojiEmoji(symbol)) return `<span class="llk-symbol">${symbol}</span>`;
+  const url = emojiToTwemojiSvgUrl(symbol);
+  return `<span class="llk-symbol"><img src="${url}" alt="${symbol}" loading="lazy"></span>`;
+}
+
+
+  function desiredTypeCount() {
+  // Interior sizes: (R-2)×(C-2). Pairs = usable/2.
+  const innerR = R - 2, innerC = C - 2;
+  const total = innerR * innerC;
+  const usable = (total % 2 === 0) ? total : total - 1;
+  const pairs = usable / 2;
+
+  // Hardness: more distinct types for larger boards
+  // 8×8 -> interior 6×6 -> 18 tiles pairs -> max 18
+  // 16×16 -> interior 14×14 -> 98 pairs
+  // 32×32 -> interior 30×30 -> 450 pairs
+  let target;
+  if (C <= 8) target = 14;        // close to max 18
+  else if (C <= 16) target = 60;  // enough variety
+  else target = 110;              // 64–100+ as you suggested
+
+  return Math.min(target, pairs);
+}
+
+function generateDistinctColors(n) {
+  // Golden-angle stepping gives nicely separated hues.
+  // Use constant saturation/lightness for clarity.
+  const colors = [];
+  const golden = 137.508; // degrees
+  let h = 15;             // starting hue
+  const s = 72;           // saturation
+  const l = 62;           // lightness
+
+  for (let i = 0; i < n; i++) {
+    h = (h + golden) % 360;
+    colors.push(`hsl(${h.toFixed(1)} ${s}% ${l}%)`);
   }
+  return colors;
+}
 
   // =========================================================
   // DOM
@@ -114,6 +156,15 @@
     C = Math.max(C, 4);
   }
 
+  function applyFontSizeForGrid() {
+  // Bigger text on small grids; smaller on huge grids
+  let px = 18;
+  if (C <= 8) px = 28;
+  else if (C <= 16) px = 20;
+  else px = 14;
+  boardEl.style.setProperty("--llk-font-size", px + "px");
+}
+
   function currentSymbols() {
     const k = themeSel.value;
     return THEMES[k] || THEMES.animals;
@@ -156,9 +207,16 @@
         const empty = (v === null);
 
         tile.className = "tile" + (empty ? " empty" : "");
+
+        if (!empty && typeof v === "string" && v.startsWith("color:")) {
+          tile.classList.add("color-tile");
+          tile.style.setProperty("--llk-tile-color", v.slice("color:".length));
+          tile.innerHTML = ""; // no symbol
+        } else {
+          tile.innerHTML = empty ? "" : renderSymbolHTML(v);
+        }
         tile.dataset.r = r;
         tile.dataset.c = c;
-        tile.innerHTML = empty ? "" : renderSymbolHTML(v);
 
         tile.addEventListener("click", () => onTileClick(tile));
         boardEl.appendChild(tile);
@@ -369,6 +427,7 @@
   // =========================================================
   function newGame() {
     parseSize();
+    applyFontSizeForGrid();
     makeEmptyGrid();
     first = second = null;
 
@@ -378,13 +437,34 @@
     const usable = (total % 2 === 0) ? total : total - 1;
     const pairs = usable / 2;
 
-    const syms = currentSymbols();
-    const pool = [];
-    for (let i=0;i<pairs;i++) {
-      const s = syms[i % syms.length];
-      pool.push(s, s);
-    }
-    shuffleArray(pool);
+const pool = [];
+
+const innerR = R - 2;
+const innerC = C - 2;
+const total = innerR * innerC;
+const usable = (total % 2 === 0) ? total : total - 1;
+const pairs = usable / 2;
+
+const theme = themeSel.value;
+let types = [];
+
+if (theme === "colors") {
+  const nTypes = desiredTypeCount();
+  const palette = generateDistinctColors(nTypes);
+  // encode as "color:" tokens
+  types = palette.map(c => `color:${c}`);
+} else {
+  const syms = currentSymbols(); // existing THEMES[...] arrays
+  // For non-color themes, also scale variety with grid size:
+  const nTypes = Math.min(desiredTypeCount(), syms.length);
+  types = syms.slice(0, nTypes);
+}
+
+for (let i = 0; i < pairs; i++) {
+  const t = types[i % types.length];
+  pool.push(t, t);
+}
+shuffleArray(pool);
 
     let k = 0;
     for (let r=1; r<=R-2; r++) {
