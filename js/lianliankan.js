@@ -60,79 +60,6 @@ function desiredTypeCount() {
   return Math.min(target, pairs);
 }
 
-// ---------- Color distance in CIELAB (ΔE76) ----------
-function clamp01(x) { return Math.min(1, Math.max(0, x)); }
-
-function srgbToLinear(u) {
-  u /= 255;
-  return (u <= 0.04045) ? (u / 12.92) : Math.pow((u + 0.055) / 1.055, 2.4);
-}
-
-function rgbToLab(r, g, b) {
-  // sRGB -> linear RGB
-  const R = srgbToLinear(r), G = srgbToLinear(g), B = srgbToLinear(b);
-
-  // linear RGB -> XYZ (D65)
-  let X = R * 0.4124564 + G * 0.3575761 + B * 0.1804375;
-  let Y = R * 0.2126729 + G * 0.7151522 + B * 0.0721750;
-  let Z = R * 0.0193339 + G * 0.1191920 + B * 0.9503041;
-
-  // Normalize by reference white (D65)
-  X /= 0.95047;
-  Y /= 1.00000;
-  Z /= 1.08883;
-
-  const f = (t) => (t > 0.008856) ? Math.cbrt(t) : (7.787 * t + 16/116);
-
-  const fx = f(X), fy = f(Y), fz = f(Z);
-  const L = 116 * fy - 16;
-  const a = 500 * (fx - fy);
-  const bb = 200 * (fy - fz);
-  return { L, a, b: bb };
-}
-
-function deltaE(lab1, lab2) {
-  const dL = lab1.L - lab2.L;
-  const da = lab1.a - lab2.a;
-  const db = lab1.b - lab2.b;
-  return Math.sqrt(dL*dL + da*da + db*db);
-}
-
-function hexToRgb(hex) {
-  const h = hex.replace("#", "");
-  const n = parseInt(h, 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-}
-
-function hslToHex(h, s, l) {
-  // h: 0..360, s/l: 0..100
-  s /= 100; l /= 100;
-  const C = (1 - Math.abs(2*l - 1)) * s;
-  const Hp = (h % 360) / 60;
-  const X = C * (1 - Math.abs((Hp % 2) - 1));
-  let r1=0,g1=0,b1=0;
-  if      (0 <= Hp && Hp < 1) { r1=C; g1=X; b1=0; }
-  else if (1 <= Hp && Hp < 2) { r1=X; g1=C; b1=0; }
-  else if (2 <= Hp && Hp < 3) { r1=0; g1=C; b1=X; }
-  else if (3 <= Hp && Hp < 4) { r1=0; g1=X; b1=C; }
-  else if (4 <= Hp && Hp < 5) { r1=X; g1=0; b1=C; }
-  else                         { r1=C; g1=0; b1=X; }
-  const m = l - C/2;
-  const r = Math.round((r1+m)*255);
-  const g = Math.round((g1+m)*255);
-  const b = Math.round((b1+m)*255);
-  return "#" + [r,g,b].map(v => v.toString(16).padStart(2,"0")).join("");
-}
-
-// deterministic RNG (stable palettes across refresh)
-function mulberry32(seed) {
-  return function() {
-    let t = seed += 0x6D2B79F5;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /**
  * Max-contrast palette:
@@ -406,8 +333,8 @@ function autoShuffleIfStuck() {
     const tile = getTileSizePx();
     if (!tile) return {x:0, y:0};
 
-    const gap = 2;
-    const pad = 6;
+    const gap = 1;
+    const pad = 5;
     const x = (c + 0.5) * (tile.w + gap) - gap/2 + pad;
     const y = (r + 0.5) * (tile.h + gap) - gap/2 + pad;
     return {x,y};
@@ -763,6 +690,7 @@ function newGame() {
     first = second = null;
     renderBoard();
     applyZoom();
+    autoShuffleIfStuck();
     
     setStatus("Shuffled. Continue.");
   }
@@ -825,6 +753,7 @@ function newGame() {
 
     renderBoard();
     applyZoom();
+    autoShuffleIfStuck();
     
 
     const rem = remainingTiles();
