@@ -253,3 +253,40 @@ footer {
   margin: 0 auto;
 }
 
+
+
+
+
+/* =========================================================
+   Notes page only: tuned list environment
+   ========================================================= */
+
+/* Use body class="page-notes" on note.html to scope styles */
+.page-notes .notes-list {
+  list-style-type: circle;   /* open circles */
+  list-style-position: outside;
+  margin: 0.5rem 0 1.2rem 2.2rem;  /* more left indent */
+  padding-left: 0.8rem;      /* additional indent for text alignment */
+}
+
+.page-notes .notes-list li {
+  margin: 0.35rem 0;         /* moderate vertical spacing */
+  line-height: 1.5;
+}
+
+/* Optional: slightly smaller list text, easy to tune */
+.page-notes .notes-list,
+.page-notes .notes-list li {
+  font-size: 0.95em;
+}
+
+/* Optional: make links slightly calmer */
+.page-notes .notes-list a {
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0,0,0,0.25);
+}
+
+.page-notes .notes-list a:hover {
+  border-bottom-color: rgba(0,0,0,0.55);
+}
+
