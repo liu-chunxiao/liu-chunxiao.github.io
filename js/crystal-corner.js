@@ -365,7 +365,7 @@ document.addEventListener("DOMContentLoaded", () => {
     drawBackground();
     drawOuterCube();
     drawCavity();
-    drawCubeEdges();
+    // drawCubeEdges();
   }
 
   function animate(timestamp) {
