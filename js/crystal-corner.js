@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <div class="crystal-canvas-wrap">
-        <canvas id="cc-canvas" width="980" height="860"></canvas>
+        <canvas id="cc-canvas" width="980" height="900"></canvas>
       </div>
     </div>
   `;
