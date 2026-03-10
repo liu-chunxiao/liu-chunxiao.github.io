@@ -1,19 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("crystal-corner-game");
-  if (!container) return;
+  const host = document.getElementById("crystal-corner-game");
+  if (!host) return;
 
-  container.innerHTML = `
+  host.innerHTML = `
     <div class="crystal-corner-game">
       <div class="crystal-controls">
         <label>
           L (crystal size)
-          <input type="range" id="cc-L" min="12" max="55" value="28">
+          <input type="range" id="cc-L" min="12" max="52" value="28">
           <span id="cc-L-val">28</span>
         </label>
 
         <label>
           Temperature T
-          <input type="range" id="cc-T" min="0.15" max="4.0" step="0.05" value="1.0">
+          <input type="range" id="cc-T" min="0.15" max="4.00" step="0.05" value="1.00">
           <span id="cc-T-val">1.00</span>
         </label>
 
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <div class="crystal-canvas-wrap">
-        <canvas id="cc-canvas" width="920" height="700"></canvas>
+        <canvas id="cc-canvas" width="980" height="760"></canvas>
       </div>
     </div>
   `;
@@ -52,24 +52,76 @@ document.addEventListener("DOMContentLoaded", () => {
   let sweepsPerFrame = parseInt(sweepsSlider.value, 10);
   let paused = false;
 
-  // h[i][j] = depth of removed cubes at position (i,j)
-  // plane partition constraints:
+  // h[i][j] = depth of removed cubes at column (i,j)
+  // monotone constraints:
   // h[i][j] >= h[i+1][j], h[i][j] >= h[i][j+1]
   let h = [];
 
-  function makeArray(n, m, value = 0) {
+  // --------- camera / projection tuned toward PRE-like look ----------
+  // x increases to viewer-right face
+  // y increases to viewer-left face
+  // z increases upward
+  const tileW = 16;
+  const tileH = 9;
+  const stepH = 8;
+
+  function project(x, y, z) {
+    const ox = canvas.width * 0.50;
+    const oy = canvas.height * 0.18;
+    return {
+      x: ox + (x - y) * tileW,
+      y: oy + (x + y) * tileH - z * stepH
+    };
+  }
+
+  function quad(p1, p2, p3, p4, fill, stroke = null, lineWidth = 1) {
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p4.x, p4.y);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+    }
+  }
+
+  function poly(points, fill, stroke = null, lineWidth = 1) {
+    if (points.length < 3) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let k = 1; k < points.length; k++) {
+      ctx.lineTo(points[k].x, points[k].y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+    }
+  }
+
+  function create2D(n, m, value = 0) {
     return Array.from({ length: n }, () => Array(m).fill(value));
   }
 
   function initializeHeights() {
-    h = makeArray(L, L, 0);
+    h = create2D(L, L, 0);
 
-    // A smooth-ish initial cavity near one corner.
-    // This avoids the totally flat/frozen look from the previous version.
+    // Smooth cavity near the visible top-front corner.
+    // Chosen so the initial image already resembles the paper:
+    // shallow near the facet edge, deep near the corner.
+    const alpha = 0.72 * L;
     for (let i = 0; i < L; i++) {
       for (let j = 0; j < L; j++) {
-        const val = Math.max(0, Math.floor(0.75 * L - 0.9 * i - 0.9 * j));
-        h[i][j] = Math.min(L, val);
+        const raw = alpha - 0.78 * i - 0.78 * j;
+        h[i][j] = Math.max(0, Math.min(L, Math.floor(raw)));
       }
     }
   }
@@ -88,8 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return true;
   }
 
-  // Boltzmann weight ~ exp(-V_removed / T)
-  // Increasing h increases removed volume by +1
+  // Simple q^V / exp(-V/T)-like sampler on removed volume.
   function metropolisStep() {
     const i = Math.floor(Math.random() * L);
     const j = Math.floor(Math.random() * L);
@@ -116,123 +167,115 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- isometric projection ----------
-  const tileW = 18;
-  const tileH = 10;
-  const stepH = 9;
+  // ---------- outer cube ----------
+  // Full cube spans 0<=x<=L, 0<=y<=L, 0<=z<=L
+  // The cavity is carved downward from the top corner near (0,0,L).
+  function drawOuterCubeFaces() {
+    const top = [
+      project(0, 0, L),
+      project(L, 0, L),
+      project(L, L, L),
+      project(0, L, L)
+    ];
 
-  function project(x, y, z) {
-    const originX = canvas.width * 0.50;
-    const originY = canvas.height * 0.18;
-    return {
-      x: originX + (x - y) * tileW,
-      y: originY + (x + y) * tileH - z * stepH
-    };
+    const right = [
+      project(L, 0, 0),
+      project(L, L, 0),
+      project(L, L, L),
+      project(L, 0, L)
+    ];
+
+    const left = [
+      project(0, L, 0),
+      project(L, L, 0),
+      project(L, L, L),
+      project(0, L, L)
+    ];
+
+    // draw broad solid faces first
+    poly(left,  "#a8a8a8");
+    poly(right, "#777777");
+    poly(top,   "#d8d8d8");
+
+    // subtle outlines
+    poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.22)", 1);
+    poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.22)", 1);
+    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.18)", 1);
   }
 
-  function drawQuad(p1, p2, p3, p4, fill, stroke = null) {
-    ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.lineTo(p3.x, p3.y);
-    ctx.lineTo(p4.x, p4.y);
-    ctx.closePath();
-    ctx.fillStyle = fill;
-    ctx.fill();
-    if (stroke) {
-      ctx.strokeStyle = stroke;
-      ctx.stroke();
-    }
-  }
-
-  // We draw the *visible cavity boundary*:
-  // horizontal terraces + two vertical side walls.
-  function drawSurface() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // soft background
-    ctx.fillStyle = "#f4f4f4";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // draw order: back to front
+  // ---------- carve cavity ----------
+  // We draw the cavity terraces and interior walls over the cube.
+  // zTop(i,j) = top height of remaining crystal at that column.
+  // Since h is removed depth from top, zTop = L - h.
+  function drawCavity() {
     const cells = [];
     for (let i = 0; i < L; i++) {
       for (let j = 0; j < L; j++) {
-        cells.push({ i, j, key: i + j });
+        if (h[i][j] > 0) cells.push({ i, j, depth: h[i][j], key: i + j });
       }
     }
+
+    // back-to-front painter order
     cells.sort((a, b) => a.key - b.key);
 
-    for (const cell of cells) {
-      const i = cell.i;
-      const j = cell.j;
-      const zTop = h[i][j];
+    for (const c of cells) {
+      const i = c.i;
+      const j = c.j;
+      const zTop = L - h[i][j];
 
-      if (zTop <= 0) continue;
-
-      // Top terrace at height zTop
+      // terrace (horizontal cavity floor at this local column)
       const p1 = project(i, j, zTop);
       const p2 = project(i + 1, j, zTop);
       const p3 = project(i + 1, j + 1, zTop);
       const p4 = project(i, j + 1, zTop);
 
-      drawQuad(p1, p2, p3, p4, "#dcdcdc", "#efefef");
+      quad(p1, p2, p3, p4, "#f0f0f0", "rgba(150,150,150,0.14)", 0.8);
 
-      // Right/down visible wall if neighbor in +i direction is lower
-      const hi = (i + 1 < L) ? h[i + 1][j] : 0;
-      if (zTop > hi) {
-        const q1 = project(i + 1, j, hi);
-        const q2 = project(i + 1, j + 1, hi);
+      // vertical wall against neighbor in +x direction
+      const hx = (i + 1 < L) ? h[i + 1][j] : 0;
+      const zNbrX = L - hx;
+      if (h[i][j] > hx) {
+        const q1 = project(i + 1, j, zNbrX);
+        const q2 = project(i + 1, j + 1, zNbrX);
         const q3 = project(i + 1, j + 1, zTop);
         const q4 = project(i + 1, j, zTop);
-        drawQuad(q1, q2, q3, q4, "#b8b8b8", "#d8d8d8");
+        quad(q1, q2, q3, q4, "#d7d7d7", "rgba(155,155,155,0.18)", 0.8);
       }
 
-      // Left/down visible wall if neighbor in +j direction is lower
-      const hj = (j + 1 < L) ? h[i][j + 1] : 0;
-      if (zTop > hj) {
-        const r1 = project(i, j + 1, hj);
-        const r2 = project(i + 1, j + 1, hj);
+      // vertical wall against neighbor in +y direction
+      const hy = (j + 1 < L) ? h[i][j + 1] : 0;
+      const zNbrY = L - hy;
+      if (h[i][j] > hy) {
+        const r1 = project(i, j + 1, zNbrY);
+        const r2 = project(i + 1, j + 1, zNbrY);
         const r3 = project(i + 1, j + 1, zTop);
         const r4 = project(i, j + 1, zTop);
-        drawQuad(r1, r2, r3, r4, "#c8c8c8", "#e0e0e0");
+        quad(r1, r2, r3, r4, "#e1e1e1", "rgba(160,160,160,0.18)", 0.8);
       }
     }
-
-    drawOuterCubeHint();
   }
 
-  // This draws faint outer cube edges so the cavity reads as "inside a cube"
-  function drawOuterCubeHint() {
-    const topA = project(0, 0, 0);
-    const topB = project(L, 0, 0);
-    const topC = project(L, L, 0);
-    const topD = project(0, L, 0);
+  // ---------- re-draw visible cube rims on top ----------
+  function drawCubeEdges() {
+    const A = project(0, 0, L);
+    const B = project(L, 0, L);
+    const C = project(L, L, L);
+    const D = project(0, L, L);
 
-    const bottomA = project(0, 0, -L * 0.95);
-    const bottomB = project(L, 0, -L * 0.95);
-    const bottomC = project(L, L, -L * 0.95);
-    const bottomD = project(0, L, -L * 0.95);
+    const E = project(L, 0, 0);
+    const F = project(L, L, 0);
+    const G = project(0, L, 0);
 
-    ctx.strokeStyle = "rgba(120,120,120,0.20)";
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(120,120,120,0.28)";
+    ctx.lineWidth = 1.1;
 
-    // top rhombus
-    ctx.beginPath();
-    ctx.moveTo(topA.x, topA.y);
-    ctx.lineTo(topB.x, topB.y);
-    ctx.lineTo(topC.x, topC.y);
-    ctx.lineTo(topD.x, topD.y);
-    ctx.closePath();
-    ctx.stroke();
+    const segments = [
+      [A, B], [B, C], [C, D], [D, A],
+      [B, E], [C, F], [D, G],
+      [E, F], [F, G]
+    ];
 
-    // vertical-ish edges
-    for (const [u, v] of [
-      [topA, bottomA],
-      [topB, bottomB],
-      [topC, bottomC],
-      [topD, bottomD]
-    ]) {
+    for (const [u, v] of segments) {
       ctx.beginPath();
       ctx.moveTo(u.x, u.y);
       ctx.lineTo(v.x, v.y);
@@ -240,12 +283,51 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // ---------- faint contour enhancement ----------
+  function drawContourHints() {
+    ctx.strokeStyle = "rgba(120,120,120,0.18)";
+    ctx.lineWidth = 0.8;
+
+    for (let i = 0; i < L; i++) {
+      for (let j = 0; j < L; j++) {
+        if (h[i][j] <= 0) continue;
+        const z = L - h[i][j];
+        const p1 = project(i, j, z);
+        const p2 = project(i + 1, j, z);
+        const p3 = project(i + 1, j + 1, z);
+        const p4 = project(i, j + 1, z);
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.lineTo(p3.x, p3.y);
+        ctx.lineTo(p4.x, p4.y);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawBackground() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f4f4f4";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function render() {
+    drawBackground();
+    drawOuterCubeFaces();
+    drawCavity();
+    drawContourHints();
+    drawCubeEdges();
+  }
+
   function animate() {
     if (!paused) {
       for (let s = 0; s < sweepsPerFrame; s++) {
         sweep();
       }
-      drawSurface();
+      render();
     }
     requestAnimationFrame(animate);
   }
@@ -254,7 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
     L = parseInt(LSlider.value, 10);
     LVal.textContent = String(L);
     initializeHeights();
-    drawSurface();
+    render();
   });
 
   TSlider.addEventListener("input", () => {
@@ -269,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   resetBtn.addEventListener("click", () => {
     initializeHeights();
-    drawSurface();
+    render();
   });
 
   pauseBtn.addEventListener("click", () => {
@@ -278,6 +360,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   initializeHeights();
-  drawSurface();
+  render();
   animate();
 });
