@@ -557,6 +557,20 @@ footer {
 }
 
 
+.crystal-canvas-wrap {
+  background: #efefef;
+  border: 1px solid rgba(90, 90, 90, 0.10);
+  padding: 0.35rem;
+}
+
+.crystal-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #f4f4f4;
+}
+
+
 
 
 
