@@ -310,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const wallStroke    = (N >= 96) ? "rgba(150,150,150,0.030)" : "rgba(150,150,150,0.06)";
       const lineW         = (N >= 96) ? 0.35 : 0.5;
 
-      quad(p1, p2, p3, p4, "#ededed", terraceStroke, lineW);
+      quad(p1, p2, p3, p4, "#f1f1f1", terraceStroke, lineW);  // top terrace: lightest
 
       const hx = (a + 1 < N) ? pi[a + 1][b] : 0;
       if (h > hx) {
@@ -319,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const q2 = project(x0, y1, zn);
         const q3 = project(x0, y1, zc);
         const q4 = project(x0, y0, zc);
-        quad(q1, q2, q3, q4, "#d9d9d9", wallStroke, lineW);
+        quad(q1, q2, q3, q4, "#d6d6d6", wallStroke, lineW);     // one wall: darkest
       }
 
       const hy = (b + 1 < N) ? pi[a][b + 1] : 0;
@@ -329,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const r2 = project(x1, y0, zn);
         const r3 = project(x1, y0, zc);
         const r4 = project(x0, y0, zc);
-        quad(r1, r2, r3, r4, "#e3e3e3", wallStroke, lineW);
+        quad(r1, r2, r3, r4, "#e2e2e2", wallStroke, lineW);     // other wall: medium
       }
     }
   }
