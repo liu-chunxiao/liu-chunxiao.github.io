@@ -7,20 +7,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="crystal-controls">
         <label>
           L (crystal size)
-          <input type="range" id="cc-Lexp" min="2" max="9" step="1" value="5">
-          <span id="cc-L-val">32</span>
+          <input type="range" id="cc-Lexp" min="2" max="10" step="1" value="6">
+          <span id="cc-L-val">64</span>
         </label>
 
         <label>
           Temperature T
-          <input type="range" id="cc-T" min="0.15" max="12.00" step="0.05" value="2.50">
-          <span id="cc-T-val">2.50</span>
+          <input type="range" id="cc-T" min="0.03" max="3.00" step="0.01" value="1.20">
+          <span id="cc-T-val">1.20</span>
         </label>
 
         <label>
           MC sweeps / snapshot
-          <input type="range" id="cc-sweeps" min="1" max="220" value="24">
-          <span id="cc-sweeps-val">24</span>
+          <input type="range" id="cc-sweeps" min="1" max="220" value="46">
+          <span id="cc-sweeps-val">46</span>
         </label>
 
         <div class="crystal-button-row">
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
 
       <div class="crystal-canvas-wrap">
-        <canvas id="cc-canvas" width="980" height="760"></canvas>
+        <canvas id="cc-canvas" width="980" height="860"></canvas>
       </div>
     </div>
   `;
@@ -49,28 +49,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let paused = false;
 
-  // User-facing physical cube size
-  let Ltrue = 2 ** parseInt(LexpSlider.value, 10); // 4 ... 512
+  // User-facing size: 4 ... 1024
+  let Ltrue = 2 ** parseInt(LexpSlider.value, 10);
 
-  // Internal coarse-grained resolution
+  // Internal coarse-grained size.
+  // Same model for all L, but capped for performance.
   let N = effectiveResolution(Ltrue);
+
+  // Block size in physical units: one simulated cell = blockSize physical cells.
+  let blockSize = Ltrue / N;
 
   let T = parseFloat(TSlider.value);
   let sweepsPerSnapshot = parseInt(sweepsSlider.value, 10);
 
-  // Slower snapshot cadence
   const SNAPSHOT_INTERVAL_MS = 320;
   let lastSnapshotTime = 0;
 
-  // Important visual fix:
-  // use a softer effective energy scale so temperature has a much wider useful range.
-  const EPSILON_VOL = 0.18;
+  // Coarse-grained energy per simulated cell.
+  // Kept fixed across L so the visual behavior stays consistent.
+  const EPSILON_VOL = 0.14;
 
-  // pi[a][b] = height of removed column in Young-diagram coordinates
+  // pi[a][b] = height of removed column in coarse-grained Young coordinates
   let pi = [];
 
   function effectiveResolution(L) {
-    return Math.min(L, 88);
+    // Up to 128^2 = 16384 columns, still fine in browser.
+    return Math.min(L, 128);
+  }
+
+  function updateScaleInfo() {
+    N = effectiveResolution(Ltrue);
+    blockSize = Ltrue / N;
   }
 
   function make2D(n, m, value = 0) {
@@ -78,11 +87,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function initializePartition() {
-    N = effectiveResolution(Ltrue);
+    updateScaleInfo();
     pi = make2D(N, N, 0);
 
-    // Start from a substantial (111)-type cavity so reset is visually interesting.
-    // The subsequent dynamics will shrink or roughen it depending on T.
+    // Initial broad (111)-type cavity.
+    // Scaled in coarse coordinates so it looks similar across all L.
     const alpha = 0.92 * N;
     for (let a = 0; a < N; a++) {
       for (let b = 0; b < N; b++) {
@@ -107,12 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function interfaceBiasedSweep() {
+    // Keep the same algorithm across all L in coarse coordinates.
     const tries = Math.max(N * N, 6 * N * N);
 
     for (let n = 0; n < tries; n++) {
       let a, b;
 
-      // Bias proposals toward the corner/interface region.
+      // Prefer updates near the corner/interface, but still allow global motion.
       if (Math.random() < 0.78) {
         a = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.24 * N));
         b = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.24 * N));
@@ -139,12 +149,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Projection: slightly elongated vertical scale and automatic fit
+  // Projection
   let proj = {
     scale: 1,
     ox: 0,
     oy: 0,
-    sx: 1.0,
+    sx: 1.00,
     sy: 0.56,
     sz: 1.36
   };
@@ -178,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const marginX = 36;
     const marginTop = 30;
-    const marginBottom = 18;
+    const marginBottom = 42; // more room so bottom corner is visible
 
     const wAvail = canvas.width - 2 * marginX;
     const hAvail = canvas.height - marginTop - marginBottom;
@@ -188,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
     proj.scale = Math.min(scaleX, scaleY);
 
     proj.ox = canvas.width * 0.50 - proj.scale * 0.5 * (xmin + xmax);
-    proj.oy = canvas.height * 0.59 - proj.scale * 0.5 * (ymin + ymax);
+    proj.oy = canvas.height * 0.55 - proj.scale * 0.5 * (ymin + ymax);
   }
 
   function project(x, y, z) {
@@ -278,14 +288,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // back-to-front painter order
     cells.sort((u, v) => v.key - u.key);
 
-    // For large N, skip some contour detail to avoid over-dense white fill
-    const stride = (N > 64) ? 2 : 1;
-
-    for (let idx = 0; idx < cells.length; idx += stride) {
-      const { a, b, h } = cells[idx];
-
+    // IMPORTANT: draw every cell, no stride skipping.
+    // This removes the fake stripes for large L.
+    for (const { a, b, h } of cells) {
       const x0 = N - a - 1;
       const x1 = N - a;
       const y0 = N - b - 1;
@@ -296,7 +304,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const p2 = project(x1, y0, zc);
       const p3 = project(x1, y1, zc);
       const p4 = project(x0, y1, zc);
-      quad(p1, p2, p3, p4, "#ededed", "rgba(150,150,150,0.08)", 0.5);
+
+      // lighter strokes for large N to avoid excessive density
+      const terraceStroke = (N >= 96) ? "rgba(150,150,150,0.035)" : "rgba(150,150,150,0.08)";
+      const wallStroke    = (N >= 96) ? "rgba(150,150,150,0.030)" : "rgba(150,150,150,0.06)";
+      const lineW         = (N >= 96) ? 0.35 : 0.5;
+
+      quad(p1, p2, p3, p4, "#ededed", terraceStroke, lineW);
 
       const hx = (a + 1 < N) ? pi[a + 1][b] : 0;
       if (h > hx) {
@@ -305,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const q2 = project(x0, y1, zn);
         const q3 = project(x0, y1, zc);
         const q4 = project(x0, y0, zc);
-        quad(q1, q2, q3, q4, "#d9d9d9", "rgba(150,150,150,0.06)", 0.45);
+        quad(q1, q2, q3, q4, "#d9d9d9", wallStroke, lineW);
       }
 
       const hy = (b + 1 < N) ? pi[a][b + 1] : 0;
@@ -315,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const r2 = project(x1, y0, zn);
         const r3 = project(x1, y0, zc);
         const r4 = project(x0, y0, zc);
-        quad(r1, r2, r3, r4, "#e3e3e3", "rgba(150,150,150,0.06)", 0.45);
+        quad(r1, r2, r3, r4, "#e3e3e3", wallStroke, lineW);
       }
     }
   }
