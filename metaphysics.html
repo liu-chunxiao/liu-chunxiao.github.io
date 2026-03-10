@@ -101,11 +101,11 @@
 <section class="game-section">
   <h3>Random crystal corner</h3>
   <p>
-    This toy model generates a discrete random stepped surface inside a corner crystal.
-    The surface is constrained to be monotone, corresponding to full occupation on the
-    <em>xy</em>, <em>yz</em>, and <em>xz</em> planes. A Metropolis sampler then produces
-    typical thermal configurations, with lower temperature giving smoother facets and
-    higher temperature giving rougher random surfaces.
+A crystal of size L×L×L is fully filled with atoms. From one corner,
+atoms are removed under the constraint that if a cube is missing then
+all cubes deeper into the corner must also be missing. The missing region
+therefore forms a 3-dimensional Young diagram (a plane partition).
+Monte-Carlo sampling generates typical thermal crystal corners.
   </p>
 
   <div id="crystal-corner-game"></div>
