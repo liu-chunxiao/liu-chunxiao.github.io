@@ -7,8 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="crystal-controls">
         <label>
           L (crystal size)
-          <input type="range" id="cc-L" min="12" max="54" value="24">
-          <span id="cc-L-val">24</span>
+          <input type="range" id="cc-Lexp" min="2" max="10" step="1" value="5">
+          <span id="cc-L-val">32</span>
         </label>
 
         <label>
@@ -18,9 +18,9 @@ document.addEventListener("DOMContentLoaded", () => {
         </label>
 
         <label>
-          MC sweeps / frame
-          <input type="range" id="cc-sweeps" min="1" max="160" value="24">
-          <span id="cc-sweeps-val">24</span>
+          MC sweeps / snapshot
+          <input type="range" id="cc-sweeps" min="1" max="200" value="20">
+          <span id="cc-sweeps-val">20</span>
         </label>
 
         <div class="crystal-button-row">
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("cc-canvas");
   const ctx = canvas.getContext("2d");
 
-  const LSlider = document.getElementById("cc-L");
+  const LexpSlider = document.getElementById("cc-Lexp");
   const TSlider = document.getElementById("cc-T");
   const sweepsSlider = document.getElementById("cc-sweeps");
   const LVal = document.getElementById("cc-L-val");
@@ -47,38 +47,49 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("cc-reset");
   const pauseBtn = document.getElementById("cc-pause");
 
-  let L = parseInt(LSlider.value, 10);
-  let T = parseFloat(TSlider.value);
-  let sweepsPerFrame = parseInt(sweepsSlider.value, 10);
   let paused = false;
 
-  // pi[a][b] is the Young-diagram height at coordinates
-  // a,b = distance from the (L,L,L) corner along -x and -y directions.
-  // Constraints:
-  // pi[a][b] >= pi[a+1][b],  pi[a][b] >= pi[a][b+1]
-  // 0 <= pi[a][b] <= L
+  // Physical cube size shown to the user
+  let Ltrue = 2 ** parseInt(LexpSlider.value, 10);
+
+  // Internal simulation size (coarse-grained for large Ltrue)
+  let N = effectiveResolution(Ltrue);
+
+  let T = parseFloat(TSlider.value);
+  let sweepsPerSnapshot = parseInt(sweepsSlider.value, 10);
+
+  // Slower snapshots
+  const SNAPSHOT_INTERVAL_MS = 260;
+  let lastSnapshotTime = 0;
+
+  // pi[a][b]: height of removed column in Young-diagram coordinates
   let pi = [];
+
+  function effectiveResolution(L) {
+    // Exact for small/moderate L, coarse-grained for large L.
+    // This keeps the browser responsive.
+    return Math.min(L, 96);
+  }
 
   function make2D(n, m, value = 0) {
     return Array.from({ length: n }, () => Array(m).fill(value));
   }
 
   function initializePartition() {
-    pi = make2D(L, L, 0);
+    N = effectiveResolution(Ltrue);
+    pi = make2D(N, N, 0);
 
-    // Initial corner Young diagram:
-    // deep near the corner (a,b small), decaying linearly away.
-    const alpha = 0.78 * L;
-    for (let a = 0; a < L; a++) {
-      for (let b = 0; b < L; b++) {
+    const alpha = 0.78 * N;
+    for (let a = 0; a < N; a++) {
+      for (let b = 0; b < N; b++) {
         const v = Math.floor(Math.max(0, alpha - 0.82 * a - 0.82 * b));
-        pi[a][b] = Math.min(L, v);
+        pi[a][b] = Math.min(N, v);
       }
     }
   }
 
   function canIncrease(a, b) {
-    if (pi[a][b] >= L) return false;
+    if (pi[a][b] >= N) return false;
     if (a > 0 && pi[a][b] + 1 > pi[a - 1][b]) return false;
     if (b > 0 && pi[a][b] + 1 > pi[a][b - 1]) return false;
     return true;
@@ -86,75 +97,103 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function canDecrease(a, b) {
     if (pi[a][b] <= 0) return false;
-    if (a < L - 1 && pi[a][b] - 1 < pi[a + 1][b]) return false;
-    if (b < L - 1 && pi[a][b] - 1 < pi[a][b + 1]) return false;
+    if (a < N - 1 && pi[a][b] - 1 < pi[a + 1][b]) return false;
+    if (b < N - 1 && pi[a][b] - 1 < pi[a][b + 1]) return false;
     return true;
   }
 
-  function localDeltaE(up) {
-    return up ? 1 : -1;
-  }
+  function interfaceBiasedSweep() {
+    const tries = Math.max(N * N, 6 * N * N);
 
-  function activeSites() {
-    const sites = [];
-    for (let a = 0; a < L; a++) {
-      for (let b = 0; b < L; b++) {
-        const v = pi[a][b];
-        const boundary =
-          (v > 0 && canDecrease(a, b)) ||
-          (v < L && canIncrease(a, b));
-        if (boundary) sites.push([a, b]);
-      }
-    }
-    return sites;
-  }
-
-  // More effective interface-focused Metropolis:
-  // most proposals target active boundary sites.
-  function metropolisSweep() {
-    const sites = activeSites();
-    const nMoves = Math.max(L * L, 4 * sites.length);
-
-    for (let n = 0; n < nMoves; n++) {
+    for (let n = 0; n < tries; n++) {
       let a, b;
-      if (sites.length > 0 && Math.random() < 0.8) {
-        [a, b] = sites[(Math.random() * sites.length) | 0];
+
+      // Mild interface bias: sample more often near the corner / active region
+      if (Math.random() < 0.75) {
+        a = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.22 * N));
+        b = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.22 * N));
       } else {
-        a = (Math.random() * L) | 0;
-        b = (Math.random() * L) | 0;
+        a = (Math.random() * N) | 0;
+        b = (Math.random() * N) | 0;
       }
 
       const up = Math.random() < 0.5;
 
       if (up) {
         if (!canIncrease(a, b)) continue;
-        const dE = localDeltaE(true);
+        const dE = 1;
         if (Math.random() < Math.exp(-dE / T)) {
           pi[a][b] += 1;
         }
       } else {
         if (!canDecrease(a, b)) continue;
-        const dE = localDeltaE(false);
-        if (dE <= 0 || Math.random() < Math.exp(-dE / T)) {
+        if (Math.random() < 1.0) {
           pi[a][b] -= 1;
         }
       }
     }
   }
 
-  // -------- isometric projection --------
-  // Use equal cube-edge lengths in projected geometry.
-  // This fixes the "squashed z" issue.
-  const s = 15; // cube size scale
+  // ---------- Projection with automatic fit ----------
+  // We deliberately make z visually longer than before.
+  // The projection is still "isometric-like", but tuned for readability.
+  let proj = {
+    scale: 1,
+    ox: 0,
+    oy: 0,
+    sx: 1,
+    sy: 0.56,   // slightly smaller y compression
+    sz: 1.30    // larger z scale so cube looks taller
+  };
+
+  function unitProject(x, y, z) {
+    return {
+      x: (x - y) * proj.sx,
+      y: (x + y) * proj.sy - z * proj.sz
+    };
+  }
+
+  function recomputeProjection() {
+    const corners = [
+      [0, 0, 0],
+      [N, 0, 0],
+      [0, N, 0],
+      [N, N, 0],
+      [0, 0, N],
+      [N, 0, N],
+      [0, N, N],
+      [N, N, N]
+    ].map(([x, y, z]) => unitProject(x, y, z));
+
+    let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+    for (const p of corners) {
+      xmin = Math.min(xmin, p.x);
+      xmax = Math.max(xmax, p.x);
+      ymin = Math.min(ymin, p.y);
+      ymax = Math.max(ymax, p.y);
+    }
+
+    const marginX = 34;
+    const marginTop = 26;
+    const marginBottom = 26;
+
+    const wAvail = canvas.width - 2 * marginX;
+    const hAvail = canvas.height - marginTop - marginBottom;
+
+    const scaleX = wAvail / (xmax - xmin);
+    const scaleY = hAvail / (ymax - ymin);
+    proj.scale = Math.min(scaleX, scaleY);
+
+    // Center horizontally; vertically place the cube slightly lower
+    proj.ox = canvas.width * 0.50 - proj.scale * 0.5 * (xmin + xmax);
+    proj.oy = canvas.height * 0.56 - proj.scale * 0.5 * (ymin + ymax);
+  }
 
   function project(x, y, z) {
-    const ox = canvas.width * 0.50;
-    const oy = canvas.height * 0.20;
-
-    // Classic isometric projection
+    const p = unitProject(x, y, z);
     return {
-      x: ox + (x - y) * s,
-      y: oy + (x + y) * (0.5 * s) - z * s
+      x: proj.ox + proj.scale * p.x,
+      y: proj.oy + proj.scale * p.y
     };
   }
 
@@ -199,108 +238,95 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function drawOuterCube() {
     const top = [
-      project(0, 0, L),
-      project(L, 0, L),
-      project(L, L, L),
-      project(0, L, L)
+      project(0, 0, N),
+      project(N, 0, N),
+      project(N, N, N),
+      project(0, N, N)
     ];
 
     const right = [
-      project(L, 0, 0),
-      project(L, L, 0),
-      project(L, L, L),
-      project(L, 0, L)
+      project(N, 0, 0),
+      project(N, N, 0),
+      project(N, N, N),
+      project(N, 0, N)
     ];
 
     const left = [
-      project(0, L, 0),
-      project(L, L, 0),
-      project(L, L, L),
-      project(0, L, L)
+      project(0, N, 0),
+      project(N, N, 0),
+      project(N, N, N),
+      project(0, N, N)
     ];
 
-    poly(left,  "#a6a6a6");
-    poly(right, "#757575");
-    poly(top,   "#d3d3d3");
+    poly(left,  "#a8a8a8");
+    poly(right, "#7b7b7b");
+    poly(top,   "#d2d2d2");
 
-    poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.20)", 1);
-    poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.20)", 1);
-    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
-  }
-
-  // Convert Young-diagram coordinates (a,b,c), measured from the corner (L,L,L)
-  // along (-x,-y,-z), to physical cube coordinates:
-  // x = L-a, y = L-b, z = L-c
-  function physFromYoung(a, b, c) {
-    return { x: L - a, y: L - b, z: L - c };
+    poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
+    poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
+    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.12)", 1);
   }
 
   function drawCavity() {
     const cells = [];
-    for (let a = 0; a < L; a++) {
-      for (let b = 0; b < L; b++) {
+    for (let a = 0; a < N; a++) {
+      for (let b = 0; b < N; b++) {
         const h = pi[a][b];
         if (h > 0) cells.push({ a, b, h, key: a + b });
       }
     }
 
-    // Draw far-to-near in the cavity coordinate
+    // far to near
     cells.sort((u, v) => v.key - u.key);
 
     for (const cell of cells) {
       const { a, b, h } = cell;
 
-      // The exposed terrace is the bottom of the removed column:
-      // c = h, i.e. physical z = L-h
-      const zc = L - h;
+      // Young diagram anchored at (N,N,N)
+      const x0 = N - a - 1;
+      const x1 = N - a;
+      const y0 = N - b - 1;
+      const y1 = N - b;
+      const zc = N - h;
 
-      // In physical x,y, the cell occupies [L-a-1, L-a] × [L-b-1, L-b]
-      const x0 = L - a - 1;
-      const x1 = L - a;
-      const y0 = L - b - 1;
-      const y1 = L - b;
-
-      // terrace
       const p1 = project(x0, y0, zc);
       const p2 = project(x1, y0, zc);
       const p3 = project(x1, y1, zc);
       const p4 = project(x0, y1, zc);
-      quad(p1, p2, p3, p4, "#eeeeee", "rgba(150,150,150,0.16)", 0.7);
+      quad(p1, p2, p3, p4, "#ededed", "rgba(150,150,150,0.12)", 0.7);
 
-      // Compare with neighbor one step farther along -x, i.e. a+1
-      const hx = (a + 1 < L) ? pi[a + 1][b] : 0;
+      const hx = (a + 1 < N) ? pi[a + 1][b] : 0;
       if (h > hx) {
-        const zn = L - hx;
+        const zn = N - hx;
         const q1 = project(x0, y0, zn);
         const q2 = project(x0, y1, zn);
         const q3 = project(x0, y1, zc);
         const q4 = project(x0, y0, zc);
-        quad(q1, q2, q3, q4, "#d8d8d8", "rgba(155,155,155,0.16)", 0.7);
+        quad(q1, q2, q3, q4, "#d9d9d9", "rgba(150,150,150,0.10)", 0.7);
       }
 
-      // Compare with neighbor one step farther along -y, i.e. b+1
-      const hy = (b + 1 < L) ? pi[a][b + 1] : 0;
+      const hy = (b + 1 < N) ? pi[a][b + 1] : 0;
       if (h > hy) {
-        const zn = L - hy;
+        const zn = N - hy;
         const r1 = project(x0, y0, zn);
         const r2 = project(x1, y0, zn);
         const r3 = project(x1, y0, zc);
         const r4 = project(x0, y0, zc);
-        quad(r1, r2, r3, r4, "#e2e2e2", "rgba(160,160,160,0.16)", 0.7);
+        quad(r1, r2, r3, r4, "#e3e3e3", "rgba(150,150,150,0.10)", 0.7);
       }
     }
   }
 
   function drawCubeEdges() {
-    const A = project(0, 0, L);
-    const B = project(L, 0, L);
-    const C = project(L, L, L);
-    const D = project(0, L, L);
-    const E = project(L, 0, 0);
-    const F = project(L, L, 0);
-    const G = project(0, L, 0);
+    const A = project(0, 0, N);
+    const B = project(N, 0, N);
+    const C = project(N, N, N);
+    const D = project(0, N, N);
+    const E = project(N, 0, 0);
+    const F = project(N, N, 0);
+    const G = project(0, N, 0);
 
-    ctx.strokeStyle = "rgba(110,110,110,0.26)";
+    ctx.strokeStyle = "rgba(105,105,105,0.24)";
     ctx.lineWidth = 1.0;
 
     const segs = [
@@ -318,25 +344,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function render() {
+    recomputeProjection();
     drawBackground();
     drawOuterCube();
     drawCavity();
     drawCubeEdges();
   }
 
-  function animate() {
-    if (!paused) {
-      for (let s = 0; s < sweepsPerFrame; s++) {
-        metropolisSweep();
+  function animate(timestamp) {
+    if (!paused && timestamp - lastSnapshotTime >= SNAPSHOT_INTERVAL_MS) {
+      for (let s = 0; s < sweepsPerSnapshot; s++) {
+        interfaceBiasedSweep();
       }
       render();
+      lastSnapshotTime = timestamp;
     }
     requestAnimationFrame(animate);
   }
 
-  LSlider.addEventListener("input", () => {
-    L = parseInt(LSlider.value, 10);
-    LVal.textContent = String(L);
+  LexpSlider.addEventListener("input", () => {
+    Ltrue = 2 ** parseInt(LexpSlider.value, 10);
+    LVal.textContent = String(Ltrue);
     initializePartition();
     render();
   });
@@ -347,8 +375,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   sweepsSlider.addEventListener("input", () => {
-    sweepsPerFrame = parseInt(sweepsSlider.value, 10);
-    sweepsVal.textContent = String(sweepsPerFrame);
+    sweepsPerSnapshot = parseInt(sweepsSlider.value, 10);
+    sweepsVal.textContent = String(sweepsPerSnapshot);
   });
 
   resetBtn.addEventListener("click", () => {
@@ -361,7 +389,11 @@ document.addEventListener("DOMContentLoaded", () => {
     pauseBtn.textContent = paused ? "Resume" : "Pause";
   });
 
+  LVal.textContent = String(Ltrue);
+  TVal.textContent = T.toFixed(2);
+  sweepsVal.textContent = String(sweepsPerSnapshot);
+
   initializePartition();
   render();
-  animate();
+  requestAnimationFrame(animate);
 });
