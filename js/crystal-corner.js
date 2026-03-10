@@ -198,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
     proj.scale = Math.min(scaleX, scaleY);
 
     proj.ox = canvas.width * 0.50 - proj.scale * 0.5 * (xmin + xmax);
-    proj.oy = canvas.height * 0.50 - proj.scale * 0.5 * (ymin + ymax);
+    proj.oy = canvas.height * 0.52 - proj.scale * 0.5 * (ymin + ymax);
   }
 
   function project(x, y, z) {
