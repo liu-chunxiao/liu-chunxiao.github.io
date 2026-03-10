@@ -436,125 +436,34 @@ footer {
 
 
 
-
-
-#crystal-corner-game {
-  margin: 1.5rem 0 2rem;
+.crystal-corner-game{
+display:grid;
+grid-template-columns:260px 1fr;
+gap:20px;
+margin-top:1em;
 }
 
-.crystal-corner-game {
-  display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(320px, 1fr);
-  gap: 1.2rem;
-  align-items: start;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(80, 80, 80, 0.16);
-  border-radius: 18px;
-  padding: 1rem;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+.crystal-controls{
+display:flex;
+flex-direction:column;
+gap:10px;
 }
 
-.crystal-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 0.95rem;
+.crystal-controls input{
+width:100%;
 }
 
-.crystal-control-grid {
-  display: grid;
-  gap: 0.85rem;
+.crystal-button-row{
+display:flex;
+gap:8px;
 }
 
-.crystal-control-grid label {
-  display: grid;
-  gap: 0.35rem;
-  font-size: 0.95rem;
+.crystal-canvas-wrap{
+background:#f5f5f5;
+border-radius:10px;
+padding:10px;
 }
 
-.crystal-control-grid span {
-  font-weight: 600;
+.crystal-canvas-wrap canvas{
+width:100%;
 }
-
-.crystal-control-grid input[type="range"] {
-  width: 100%;
-}
-
-.crystal-control-grid strong {
-  font-weight: 600;
-  color: #444;
-}
-
-.crystal-button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-}
-
-.crystal-button-row button {
-  appearance: none;
-  border: 1px solid rgba(70, 70, 70, 0.22);
-  background: #f4f4f4;
-  color: #333;
-  border-radius: 999px;
-  padding: 0.45rem 0.85rem;
-  font: inherit;
-  cursor: pointer;
-  transition: transform 0.12s ease, background 0.12s ease;
-}
-
-.crystal-button-row button:hover {
-  background: #ececec;
-  transform: translateY(-1px);
-}
-
-.crystal-status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem 0.7rem;
-  font-size: 0.94rem;
-  color: #444;
-}
-
-.crystal-status span {
-  background: rgba(0, 0, 0, 0.045);
-  border-radius: 999px;
-  padding: 0.28rem 0.65rem;
-}
-
-.crystal-caption {
-  margin: 0;
-  font-size: 0.94rem;
-  line-height: 1.5;
-  color: #555;
-}
-
-.crystal-canvas-wrap {
-  width: 100%;
-  overflow: hidden;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
-  border: 1px solid rgba(80, 80, 80, 0.12);
-}
-
-.crystal-canvas-wrap canvas {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-@media (max-width: 900px) {
-  .crystal-corner-game {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
