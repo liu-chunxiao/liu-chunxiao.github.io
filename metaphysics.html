@@ -41,9 +41,28 @@
       Have fun with mathematical physics!
       <br>
 
+
+<section class="game-section">
+  <h3>Random crystal corner</h3>
+  <p>
+A crystal of size L×L×L is fully filled with atoms. From one corner,
+atoms are removed under the constraint that if a cube is missing then
+all cubes deeper into the corner must also be missing. The missing region
+therefore forms a 3-dimensional Young diagram (a plane partition).
+Monte-Carlo sampling generates typical thermal crystal corners.
+  </p>
+
+  <div id="crystal-corner-game"></div>
+</section>
+
+
+  <script src="js/crystal-corner.js"></script>
+
+
+      
       
 <section class="lianliankan" id="lianliankan">
-  <h2>连连看 (Lianliankan)</h2>
+  <h3>连连看 (Lianliankan)</h3>
 
   <div class="game-bar">
     <button id="llk-new">New Game</button>
@@ -98,21 +117,6 @@
 
 <script src="js/lianliankan.js" defer></script>
 
-<section class="game-section">
-  <h3>Random crystal corner</h3>
-  <p>
-A crystal of size L×L×L is fully filled with atoms. From one corner,
-atoms are removed under the constraint that if a cube is missing then
-all cubes deeper into the corner must also be missing. The missing region
-therefore forms a 3-dimensional Young diagram (a plane partition).
-Monte-Carlo sampling generates typical thermal crystal corners.
-  </p>
-
-  <div id="crystal-corner-game"></div>
-</section>
-
-
-  <script src="js/crystal-corner.js"></script>
 
 
     </section>
