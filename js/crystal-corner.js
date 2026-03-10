@@ -7,20 +7,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="crystal-controls">
         <label>
           L (crystal size)
-          <input type="range" id="cc-L" min="12" max="52" value="28">
-          <span id="cc-L-val">28</span>
+          <input type="range" id="cc-L" min="12" max="54" value="24">
+          <span id="cc-L-val">24</span>
         </label>
 
         <label>
           Temperature T
-          <input type="range" id="cc-T" min="0.15" max="4.00" step="0.05" value="1.00">
-          <span id="cc-T-val">1.00</span>
+          <input type="range" id="cc-T" min="0.20" max="4.00" step="0.05" value="1.20">
+          <span id="cc-T-val">1.20</span>
         </label>
 
         <label>
           MC sweeps / frame
-          <input type="range" id="cc-sweeps" min="1" max="120" value="20">
-          <span id="cc-sweeps-val">20</span>
+          <input type="range" id="cc-sweeps" min="1" max="160" value="24">
+          <span id="cc-sweeps-val">24</span>
         </label>
 
         <div class="crystal-button-row">
@@ -52,25 +52,109 @@ document.addEventListener("DOMContentLoaded", () => {
   let sweepsPerFrame = parseInt(sweepsSlider.value, 10);
   let paused = false;
 
-  // h[i][j] = depth of removed cubes at column (i,j)
-  // monotone constraints:
-  // h[i][j] >= h[i+1][j], h[i][j] >= h[i][j+1]
-  let h = [];
+  // pi[a][b] is the Young-diagram height at coordinates
+  // a,b = distance from the (L,L,L) corner along -x and -y directions.
+  // Constraints:
+  // pi[a][b] >= pi[a+1][b],  pi[a][b] >= pi[a][b+1]
+  // 0 <= pi[a][b] <= L
+  let pi = [];
 
-  // --------- camera / projection tuned toward PRE-like look ----------
-  // x increases to viewer-right face
-  // y increases to viewer-left face
-  // z increases upward
-  const tileW = 16;
-  const tileH = 9;
-  const stepH = 8;
+  function make2D(n, m, value = 0) {
+    return Array.from({ length: n }, () => Array(m).fill(value));
+  }
+
+  function initializePartition() {
+    pi = make2D(L, L, 0);
+
+    // Initial corner Young diagram:
+    // deep near the corner (a,b small), decaying linearly away.
+    const alpha = 0.78 * L;
+    for (let a = 0; a < L; a++) {
+      for (let b = 0; b < L; b++) {
+        const v = Math.floor(Math.max(0, alpha - 0.82 * a - 0.82 * b));
+        pi[a][b] = Math.min(L, v);
+      }
+    }
+  }
+
+  function canIncrease(a, b) {
+    if (pi[a][b] >= L) return false;
+    if (a > 0 && pi[a][b] + 1 > pi[a - 1][b]) return false;
+    if (b > 0 && pi[a][b] + 1 > pi[a][b - 1]) return false;
+    return true;
+  }
+
+  function canDecrease(a, b) {
+    if (pi[a][b] <= 0) return false;
+    if (a < L - 1 && pi[a][b] - 1 < pi[a + 1][b]) return false;
+    if (b < L - 1 && pi[a][b] - 1 < pi[a][b + 1]) return false;
+    return true;
+  }
+
+  function localDeltaE(up) {
+    return up ? 1 : -1;
+  }
+
+  function activeSites() {
+    const sites = [];
+    for (let a = 0; a < L; a++) {
+      for (let b = 0; b < L; b++) {
+        const v = pi[a][b];
+        const boundary =
+          (v > 0 && canDecrease(a, b)) ||
+          (v < L && canIncrease(a, b));
+        if (boundary) sites.push([a, b]);
+      }
+    }
+    return sites;
+  }
+
+  // More effective interface-focused Metropolis:
+  // most proposals target active boundary sites.
+  function metropolisSweep() {
+    const sites = activeSites();
+    const nMoves = Math.max(L * L, 4 * sites.length);
+
+    for (let n = 0; n < nMoves; n++) {
+      let a, b;
+      if (sites.length > 0 && Math.random() < 0.8) {
+        [a, b] = sites[(Math.random() * sites.length) | 0];
+      } else {
+        a = (Math.random() * L) | 0;
+        b = (Math.random() * L) | 0;
+      }
+
+      const up = Math.random() < 0.5;
+
+      if (up) {
+        if (!canIncrease(a, b)) continue;
+        const dE = localDeltaE(true);
+        if (Math.random() < Math.exp(-dE / T)) {
+          pi[a][b] += 1;
+        }
+      } else {
+        if (!canDecrease(a, b)) continue;
+        const dE = localDeltaE(false);
+        if (dE <= 0 || Math.random() < Math.exp(-dE / T)) {
+          pi[a][b] -= 1;
+        }
+      }
+    }
+  }
+
+  // -------- isometric projection --------
+  // Use equal cube-edge lengths in projected geometry.
+  // This fixes the "squashed z" issue.
+  const s = 15; // cube size scale
 
   function project(x, y, z) {
     const ox = canvas.width * 0.50;
-    const oy = canvas.height * 0.18;
+    const oy = canvas.height * 0.20;
+
+    // Classic isometric projection
     return {
-      x: ox + (x - y) * tileW,
-      y: oy + (x + y) * tileH - z * stepH
+      x: ox + (x - y) * s,
+      y: oy + (x + y) * (0.5 * s) - z * s
     };
   }
 
@@ -107,70 +191,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function create2D(n, m, value = 0) {
-    return Array.from({ length: n }, () => Array(m).fill(value));
+  function drawBackground() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f4f4f4";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  function initializeHeights() {
-    h = create2D(L, L, 0);
-
-    // Smooth cavity near the visible top-front corner.
-    // Chosen so the initial image already resembles the paper:
-    // shallow near the facet edge, deep near the corner.
-    const alpha = 0.72 * L;
-    for (let i = 0; i < L; i++) {
-      for (let j = 0; j < L; j++) {
-        const raw = alpha - 0.78 * i - 0.78 * j;
-        h[i][j] = Math.max(0, Math.min(L, Math.floor(raw)));
-      }
-    }
-  }
-
-  function canIncrease(i, j) {
-    if (h[i][j] >= L) return false;
-    if (i > 0 && h[i][j] + 1 > h[i - 1][j]) return false;
-    if (j > 0 && h[i][j] + 1 > h[i][j - 1]) return false;
-    return true;
-  }
-
-  function canDecrease(i, j) {
-    if (h[i][j] <= 0) return false;
-    if (i < L - 1 && h[i][j] - 1 < h[i + 1][j]) return false;
-    if (j < L - 1 && h[i][j] - 1 < h[i][j + 1]) return false;
-    return true;
-  }
-
-  // Simple q^V / exp(-V/T)-like sampler on removed volume.
-  function metropolisStep() {
-    const i = Math.floor(Math.random() * L);
-    const j = Math.floor(Math.random() * L);
-    const up = Math.random() < 0.5;
-
-    if (up) {
-      if (!canIncrease(i, j)) return;
-      const dE = 1;
-      if (Math.random() < Math.exp(-dE / T)) {
-        h[i][j] += 1;
-      }
-    } else {
-      if (!canDecrease(i, j)) return;
-      const dE = -1;
-      if (dE <= 0 || Math.random() < Math.exp(-dE / T)) {
-        h[i][j] -= 1;
-      }
-    }
-  }
-
-  function sweep() {
-    for (let n = 0; n < L * L; n++) {
-      metropolisStep();
-    }
-  }
-
-  // ---------- outer cube ----------
-  // Full cube spans 0<=x<=L, 0<=y<=L, 0<=z<=L
-  // The cavity is carved downward from the top corner near (0,0,L).
-  function drawOuterCubeFaces() {
+  function drawOuterCube() {
     const top = [
       project(0, 0, L),
       project(L, 0, L),
@@ -192,90 +219,97 @@ document.addEventListener("DOMContentLoaded", () => {
       project(0, L, L)
     ];
 
-    // draw broad solid faces first
-    poly(left,  "#a8a8a8");
-    poly(right, "#777777");
-    poly(top,   "#d8d8d8");
+    poly(left,  "#a6a6a6");
+    poly(right, "#757575");
+    poly(top,   "#d3d3d3");
 
-    // subtle outlines
-    poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.22)", 1);
-    poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.22)", 1);
-    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.18)", 1);
+    poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.20)", 1);
+    poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.20)", 1);
+    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
   }
 
-  // ---------- carve cavity ----------
-  // We draw the cavity terraces and interior walls over the cube.
-  // zTop(i,j) = top height of remaining crystal at that column.
-  // Since h is removed depth from top, zTop = L - h.
+  // Convert Young-diagram coordinates (a,b,c), measured from the corner (L,L,L)
+  // along (-x,-y,-z), to physical cube coordinates:
+  // x = L-a, y = L-b, z = L-c
+  function physFromYoung(a, b, c) {
+    return { x: L - a, y: L - b, z: L - c };
+  }
+
   function drawCavity() {
     const cells = [];
-    for (let i = 0; i < L; i++) {
-      for (let j = 0; j < L; j++) {
-        if (h[i][j] > 0) cells.push({ i, j, depth: h[i][j], key: i + j });
+    for (let a = 0; a < L; a++) {
+      for (let b = 0; b < L; b++) {
+        const h = pi[a][b];
+        if (h > 0) cells.push({ a, b, h, key: a + b });
       }
     }
 
-    // back-to-front painter order
-    cells.sort((a, b) => a.key - b.key);
+    // Draw far-to-near in the cavity coordinate
+    cells.sort((u, v) => v.key - u.key);
 
-    for (const c of cells) {
-      const i = c.i;
-      const j = c.j;
-      const zTop = L - h[i][j];
+    for (const cell of cells) {
+      const { a, b, h } = cell;
 
-      // terrace (horizontal cavity floor at this local column)
-      const p1 = project(i, j, zTop);
-      const p2 = project(i + 1, j, zTop);
-      const p3 = project(i + 1, j + 1, zTop);
-      const p4 = project(i, j + 1, zTop);
+      // The exposed terrace is the bottom of the removed column:
+      // c = h, i.e. physical z = L-h
+      const zc = L - h;
 
-      quad(p1, p2, p3, p4, "#f0f0f0", "rgba(150,150,150,0.14)", 0.8);
+      // In physical x,y, the cell occupies [L-a-1, L-a] × [L-b-1, L-b]
+      const x0 = L - a - 1;
+      const x1 = L - a;
+      const y0 = L - b - 1;
+      const y1 = L - b;
 
-      // vertical wall against neighbor in +x direction
-      const hx = (i + 1 < L) ? h[i + 1][j] : 0;
-      const zNbrX = L - hx;
-      if (h[i][j] > hx) {
-        const q1 = project(i + 1, j, zNbrX);
-        const q2 = project(i + 1, j + 1, zNbrX);
-        const q3 = project(i + 1, j + 1, zTop);
-        const q4 = project(i + 1, j, zTop);
-        quad(q1, q2, q3, q4, "#d7d7d7", "rgba(155,155,155,0.18)", 0.8);
+      // terrace
+      const p1 = project(x0, y0, zc);
+      const p2 = project(x1, y0, zc);
+      const p3 = project(x1, y1, zc);
+      const p4 = project(x0, y1, zc);
+      quad(p1, p2, p3, p4, "#eeeeee", "rgba(150,150,150,0.16)", 0.7);
+
+      // Compare with neighbor one step farther along -x, i.e. a+1
+      const hx = (a + 1 < L) ? pi[a + 1][b] : 0;
+      if (h > hx) {
+        const zn = L - hx;
+        const q1 = project(x0, y0, zn);
+        const q2 = project(x0, y1, zn);
+        const q3 = project(x0, y1, zc);
+        const q4 = project(x0, y0, zc);
+        quad(q1, q2, q3, q4, "#d8d8d8", "rgba(155,155,155,0.16)", 0.7);
       }
 
-      // vertical wall against neighbor in +y direction
-      const hy = (j + 1 < L) ? h[i][j + 1] : 0;
-      const zNbrY = L - hy;
-      if (h[i][j] > hy) {
-        const r1 = project(i, j + 1, zNbrY);
-        const r2 = project(i + 1, j + 1, zNbrY);
-        const r3 = project(i + 1, j + 1, zTop);
-        const r4 = project(i, j + 1, zTop);
-        quad(r1, r2, r3, r4, "#e1e1e1", "rgba(160,160,160,0.18)", 0.8);
+      // Compare with neighbor one step farther along -y, i.e. b+1
+      const hy = (b + 1 < L) ? pi[a][b + 1] : 0;
+      if (h > hy) {
+        const zn = L - hy;
+        const r1 = project(x0, y0, zn);
+        const r2 = project(x1, y0, zn);
+        const r3 = project(x1, y0, zc);
+        const r4 = project(x0, y0, zc);
+        quad(r1, r2, r3, r4, "#e2e2e2", "rgba(160,160,160,0.16)", 0.7);
       }
     }
   }
 
-  // ---------- re-draw visible cube rims on top ----------
   function drawCubeEdges() {
     const A = project(0, 0, L);
     const B = project(L, 0, L);
     const C = project(L, L, L);
     const D = project(0, L, L);
-
     const E = project(L, 0, 0);
     const F = project(L, L, 0);
     const G = project(0, L, 0);
 
-    ctx.strokeStyle = "rgba(120,120,120,0.28)";
-    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = "rgba(110,110,110,0.26)";
+    ctx.lineWidth = 1.0;
 
-    const segments = [
+    const segs = [
       [A, B], [B, C], [C, D], [D, A],
       [B, E], [C, F], [D, G],
       [E, F], [F, G]
     ];
 
-    for (const [u, v] of segments) {
+    for (const [u, v] of segs) {
       ctx.beginPath();
       ctx.moveTo(u.x, u.y);
       ctx.lineTo(v.x, v.y);
@@ -283,49 +317,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- faint contour enhancement ----------
-  function drawContourHints() {
-    ctx.strokeStyle = "rgba(120,120,120,0.18)";
-    ctx.lineWidth = 0.8;
-
-    for (let i = 0; i < L; i++) {
-      for (let j = 0; j < L; j++) {
-        if (h[i][j] <= 0) continue;
-        const z = L - h[i][j];
-        const p1 = project(i, j, z);
-        const p2 = project(i + 1, j, z);
-        const p3 = project(i + 1, j + 1, z);
-        const p4 = project(i, j + 1, z);
-
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.lineTo(p3.x, p3.y);
-        ctx.lineTo(p4.x, p4.y);
-        ctx.closePath();
-        ctx.stroke();
-      }
-    }
-  }
-
-  function drawBackground() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#f4f4f4";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
   function render() {
     drawBackground();
-    drawOuterCubeFaces();
+    drawOuterCube();
     drawCavity();
-    drawContourHints();
     drawCubeEdges();
   }
 
   function animate() {
     if (!paused) {
       for (let s = 0; s < sweepsPerFrame; s++) {
-        sweep();
+        metropolisSweep();
       }
       render();
     }
@@ -335,7 +337,7 @@ document.addEventListener("DOMContentLoaded", () => {
   LSlider.addEventListener("input", () => {
     L = parseInt(LSlider.value, 10);
     LVal.textContent = String(L);
-    initializeHeights();
+    initializePartition();
     render();
   });
 
@@ -350,7 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   resetBtn.addEventListener("click", () => {
-    initializeHeights();
+    initializePartition();
     render();
   });
 
@@ -359,7 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pauseBtn.textContent = paused ? "Resume" : "Pause";
   });
 
-  initializeHeights();
+  initializePartition();
   render();
   animate();
 });
