@@ -7,20 +7,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="crystal-controls">
         <label>
           L (crystal size)
-          <input type="range" id="cc-Lexp" min="2" max="10" step="1" value="5">
+          <input type="range" id="cc-Lexp" min="2" max="9" step="1" value="5">
           <span id="cc-L-val">32</span>
         </label>
 
         <label>
           Temperature T
-          <input type="range" id="cc-T" min="0.20" max="4.00" step="0.05" value="1.20">
-          <span id="cc-T-val">1.20</span>
+          <input type="range" id="cc-T" min="0.15" max="12.00" step="0.05" value="2.50">
+          <span id="cc-T-val">2.50</span>
         </label>
 
         <label>
           MC sweeps / snapshot
-          <input type="range" id="cc-sweeps" min="1" max="200" value="20">
-          <span id="cc-sweeps-val">20</span>
+          <input type="range" id="cc-sweeps" min="1" max="220" value="24">
+          <span id="cc-sweeps-val">24</span>
         </label>
 
         <div class="crystal-button-row">
@@ -49,26 +49,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let paused = false;
 
-  // Physical cube size shown to the user
-  let Ltrue = 2 ** parseInt(LexpSlider.value, 10);
+  // User-facing physical cube size
+  let Ltrue = 2 ** parseInt(LexpSlider.value, 10); // 4 ... 512
 
-  // Internal simulation size (coarse-grained for large Ltrue)
+  // Internal coarse-grained resolution
   let N = effectiveResolution(Ltrue);
 
   let T = parseFloat(TSlider.value);
   let sweepsPerSnapshot = parseInt(sweepsSlider.value, 10);
 
-  // Slower snapshots
-  const SNAPSHOT_INTERVAL_MS = 260;
+  // Slower snapshot cadence
+  const SNAPSHOT_INTERVAL_MS = 320;
   let lastSnapshotTime = 0;
 
-  // pi[a][b]: height of removed column in Young-diagram coordinates
+  // Important visual fix:
+  // use a softer effective energy scale so temperature has a much wider useful range.
+  const EPSILON_VOL = 0.18;
+
+  // pi[a][b] = height of removed column in Young-diagram coordinates
   let pi = [];
 
   function effectiveResolution(L) {
-    // Exact for small/moderate L, coarse-grained for large L.
-    // This keeps the browser responsive.
-    return Math.min(L, 96);
+    return Math.min(L, 88);
   }
 
   function make2D(n, m, value = 0) {
@@ -79,10 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
     N = effectiveResolution(Ltrue);
     pi = make2D(N, N, 0);
 
-    const alpha = 0.78 * N;
+    // Start from a substantial (111)-type cavity so reset is visually interesting.
+    // The subsequent dynamics will shrink or roughen it depending on T.
+    const alpha = 0.92 * N;
     for (let a = 0; a < N; a++) {
       for (let b = 0; b < N; b++) {
-        const v = Math.floor(Math.max(0, alpha - 0.82 * a - 0.82 * b));
+        const v = Math.floor(Math.max(0, alpha - 0.95 * a - 0.95 * b));
         pi[a][b] = Math.min(N, v);
       }
     }
@@ -108,10 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let n = 0; n < tries; n++) {
       let a, b;
 
-      // Mild interface bias: sample more often near the corner / active region
-      if (Math.random() < 0.75) {
-        a = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.22 * N));
-        b = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.22 * N));
+      // Bias proposals toward the corner/interface region.
+      if (Math.random() < 0.78) {
+        a = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.24 * N));
+        b = Math.min(N - 1, Math.floor(-Math.log(1 - Math.random()) * 0.24 * N));
       } else {
         a = (Math.random() * N) | 0;
         b = (Math.random() * N) | 0;
@@ -121,29 +125,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (up) {
         if (!canIncrease(a, b)) continue;
-        const dE = 1;
+        const dE = EPSILON_VOL;
         if (Math.random() < Math.exp(-dE / T)) {
           pi[a][b] += 1;
         }
       } else {
         if (!canDecrease(a, b)) continue;
-        if (Math.random() < 1.0) {
+        const dE = -EPSILON_VOL;
+        if (dE <= 0 || Math.random() < Math.exp(-dE / T)) {
           pi[a][b] -= 1;
         }
       }
     }
   }
 
-  // ---------- Projection with automatic fit ----------
-  // We deliberately make z visually longer than before.
-  // The projection is still "isometric-like", but tuned for readability.
+  // Projection: slightly elongated vertical scale and automatic fit
   let proj = {
     scale: 1,
     ox: 0,
     oy: 0,
-    sx: 1,
-    sy: 0.56,   // slightly smaller y compression
-    sz: 1.30    // larger z scale so cube looks taller
+    sx: 1.0,
+    sy: 0.56,
+    sz: 1.36
   };
 
   function unitProject(x, y, z) {
@@ -173,9 +176,9 @@ document.addEventListener("DOMContentLoaded", () => {
       ymax = Math.max(ymax, p.y);
     }
 
-    const marginX = 34;
-    const marginTop = 26;
-    const marginBottom = 26;
+    const marginX = 36;
+    const marginTop = 30;
+    const marginBottom = 18;
 
     const wAvail = canvas.width - 2 * marginX;
     const hAvail = canvas.height - marginTop - marginBottom;
@@ -184,9 +187,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const scaleY = hAvail / (ymax - ymin);
     proj.scale = Math.min(scaleX, scaleY);
 
-    // Center horizontally; vertically place the cube slightly lower
     proj.ox = canvas.width * 0.50 - proj.scale * 0.5 * (xmin + xmax);
-    proj.oy = canvas.height * 0.56 - proj.scale * 0.5 * (ymin + ymax);
+    proj.oy = canvas.height * 0.59 - proj.scale * 0.5 * (ymin + ymax);
   }
 
   function project(x, y, z) {
@@ -276,13 +278,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // far to near
     cells.sort((u, v) => v.key - u.key);
 
-    for (const cell of cells) {
-      const { a, b, h } = cell;
+    // For large N, skip some contour detail to avoid over-dense white fill
+    const stride = (N > 64) ? 2 : 1;
 
-      // Young diagram anchored at (N,N,N)
+    for (let idx = 0; idx < cells.length; idx += stride) {
+      const { a, b, h } = cells[idx];
+
       const x0 = N - a - 1;
       const x1 = N - a;
       const y0 = N - b - 1;
@@ -293,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const p2 = project(x1, y0, zc);
       const p3 = project(x1, y1, zc);
       const p4 = project(x0, y1, zc);
-      quad(p1, p2, p3, p4, "#ededed", "rgba(150,150,150,0.12)", 0.7);
+      quad(p1, p2, p3, p4, "#ededed", "rgba(150,150,150,0.08)", 0.5);
 
       const hx = (a + 1 < N) ? pi[a + 1][b] : 0;
       if (h > hx) {
@@ -302,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const q2 = project(x0, y1, zn);
         const q3 = project(x0, y1, zc);
         const q4 = project(x0, y0, zc);
-        quad(q1, q2, q3, q4, "#d9d9d9", "rgba(150,150,150,0.10)", 0.7);
+        quad(q1, q2, q3, q4, "#d9d9d9", "rgba(150,150,150,0.06)", 0.45);
       }
 
       const hy = (b + 1 < N) ? pi[a][b + 1] : 0;
@@ -312,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const r2 = project(x1, y0, zn);
         const r3 = project(x1, y0, zc);
         const r4 = project(x0, y0, zc);
-        quad(r1, r2, r3, r4, "#e3e3e3", "rgba(150,150,150,0.10)", 0.7);
+        quad(r1, r2, r3, r4, "#e3e3e3", "rgba(150,150,150,0.06)", 0.45);
       }
     }
   }
