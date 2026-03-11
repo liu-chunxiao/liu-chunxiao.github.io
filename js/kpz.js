@@ -45,7 +45,7 @@ canvas.height = NY * CELL;
   const randomSeedEl = document.getElementById("kpzRandomSeed");
   const infoEl = document.getElementById("kpzInfo");
 
-  const startBtn = document.getElementById("kpzStartBtn");
+  // const startBtn = document.getElementById("kpzStartBtn");
   const pauseBtn = document.getElementById("kpzPauseBtn");
   const stepBtn = document.getElementById("kpzStepBtn");
   const resetBtn = document.getElementById("kpzResetBtn");
@@ -112,6 +112,35 @@ canvas.height = NY * CELL;
   function clamp(x, a, b) {
     return Math.max(a, Math.min(b, x));
   }
+
+
+
+  seedTypeEl.addEventListener("change", () => {
+  const isPoly = seedTypeEl.value === "polygon";
+  polygonSidesEl.disabled = !isPoly;
+  pauseSimulation();
+  buildSeed();
+});
+
+polygonSidesEl.addEventListener("change", () => {
+  pauseSimulation();
+  buildSeed();
+});
+
+seedRadiusEl.addEventListener("change", () => {
+  pauseSimulation();
+  buildSeed();
+});
+
+growthRuleEl.addEventListener("change", () => {
+  pauseSimulation();
+  buildSeed();
+});
+
+randomSeedEl.addEventListener("change", () => {
+  pauseSimulation();
+  buildSeed();
+});
 
   // -------------------------------
   // Polygon / curve generation
@@ -372,29 +401,31 @@ function resetArrays() {
   stepCount = 0;
 }
 
-  function buildSeed() {
-    resetArrays();
-    setRNG();
+function buildSeed() {
+  resetArrays();
+  setRNG();
 
-    seedCenterX = NX / 2;
-    seedCenterY = NY / 2;
+  seedCenterX = NX / 2;
+  seedCenterY = NY / 2;
 
-    const radius = parseInt(seedRadiusEl.value, 10);
-    const seedType = seedTypeEl.value;
+  const radius = parseInt(seedRadiusEl.value, 10);
+  const seedType = seedTypeEl.value;
 
-    let pts;
-    if (seedType === "polygon") {
-      const n = clamp(parseInt(polygonSidesEl.value, 10) || 6, 3, 20);
-      pts = makeRegularPolygon(seedCenterX, seedCenterY, radius, n);
-    } else {
-      pts = makeRandomClosedCurve(seedCenterX, seedCenterY, radius);
-    }
-
-    fillPolygon(pts);
-    rebuildFrontier();
-    draw();
-    updateInfo();
+  let pts;
+  if (seedType === "polygon") {
+    const n = clamp(parseInt(polygonSidesEl.value, 10) || 6, 3, 20);
+    pts = makeRegularPolygon(seedCenterX, seedCenterY, radius, n);
+  } else {
+    pts = makeRandomClosedCurve(seedCenterX, seedCenterY, radius);
   }
+
+  fillPolygon(pts);
+  rebuildFrontier();
+  draw();
+  updateInfo();
+
+  startSimulation();
+}
 
   function updateInfo() {
     let occCount = 0;
@@ -428,16 +459,15 @@ function resetArrays() {
   // -------------------------------
   // Events
   // -------------------------------
-  startBtn.addEventListener("click", startSimulation);
   pauseBtn.addEventListener("click", pauseSimulation);
   stepBtn.addEventListener("click", () => {
     const n = clamp(parseInt(growthPerFrameEl.value, 10) || 10, 1, 500);
     stepSimulation(n);
   });
-  resetBtn.addEventListener("click", () => {
-    pauseSimulation();
-    buildSeed();
-  });
+    resetBtn.addEventListener("click", () => {
+      pauseSimulation();
+      buildSeed();
+    });
 
   seedTypeEl.addEventListener("change", () => {
     const isPoly = seedTypeEl.value === "polygon";
