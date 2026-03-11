@@ -135,6 +135,57 @@ Monte-Carlo sampling generates typical thermal crystal corners.
 
 
       <br>
+
+
+      <section class="gameoflife" id="gameoflife">
+  <h3>Conway’s Game of Life on a Torus</h3>
+
+  <p class="game-intro">
+    Conway’s Game of Life is a classic cellular automaton in which each cell is
+    either alive or dead, and the entire pattern evolves by simple local rules.
+    Here the lattice has <strong>periodic boundary conditions</strong> in both directions,
+    so the square is topologically a <strong>torus</strong>: cells leaving one edge re-enter
+    from the opposite edge. Click or drag on the board to draw your own initial state.
+  </p>
+
+  <div class="gol-panel">
+    <div class="gol-controls">
+      <button id="gol-start">Start</button>
+      <button id="gol-step">Step</button>
+      <button id="gol-clear">Clear</button>
+      <button id="gol-random">Randomize</button>
+    </div>
+
+    <div class="gol-sliders">
+      <label for="gol-speed">
+        Speed:
+        <span id="gol-speed-value">120 ms</span>
+      </label>
+      <input type="range" id="gol-speed" min="40" max="500" step="10" value="120">
+
+      <label for="gol-size">
+        Grid size:
+        <span id="gol-size-value">40 × 40</span>
+      </label>
+      <input type="range" id="gol-size" min="20" max="80" step="2" value="40">
+
+      <label for="gol-density">
+        Random density:
+        <span id="gol-density-value">0.28</span>
+      </label>
+      <input type="range" id="gol-density" min="0.05" max="0.60" step="0.01" value="0.28">
+    </div>
+  </div>
+
+  <div class="gol-canvas-wrap">
+    <canvas id="gol-canvas" width="720" height="720"></canvas>
+  </div>
+</section>
+
+<script src="gameoflife.js"></script>
+
+
+      <br>
       
 <section class="lianliankan rmp-block" id="lianliankan">
   <h3> Lianliankan (<span class="llk-cn">连连看</span>)</h3>
