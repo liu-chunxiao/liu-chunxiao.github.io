@@ -686,7 +686,7 @@ footer {
 
 #kpzCanvas {
   display: block;
-  width: min(760px, 100%);
+  width: min(900px, 100%);
   height: auto;
   border: 1px solid #c8c8c0;
   background: #fafaf7;
