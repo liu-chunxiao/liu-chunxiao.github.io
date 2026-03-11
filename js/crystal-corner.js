@@ -47,6 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("cc-reset");
   const pauseBtn = document.getElementById("cc-pause");
 
+  const FACE_TOP   = "#d2d2d2";
+  const FACE_LEFT  = "#a8a8a8";
+  const FACE_RIGHT = "#7b7b7b";
+
   let paused = false;
 
   // User-facing size: 4 ... 1024
@@ -270,9 +274,9 @@ document.addEventListener("DOMContentLoaded", () => {
       project(0, N, N)
     ];
 
-    poly(left,  "#a8a8a8");
-    poly(right, "#7b7b7b");
-    poly(top,   "#d2d2d2");
+    poly(left,  FACE_LEFT);
+    poly(right, FACE_RIGHT);
+    poly(top,   FACE_TOP);
 
     poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
     poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
@@ -306,11 +310,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const p4 = project(x0, y1, zc);
 
       // lighter strokes for large N to avoid excessive density
-      const terraceStroke = (N >= 96) ? "rgba(150,150,150,0.035)" : "rgba(150,150,150,0.08)";
-      const wallStroke    = (N >= 96) ? "rgba(150,150,150,0.030)" : "rgba(150,150,150,0.06)";
+      const terraceStroke = (N >= 96) ? "rgba(150,150,150,0.05)" : "rgba(150,150,150,0.10)";
+      const wallStroke    = (N >= 96) ? "rgba(150,150,150,0.04)" : "rgba(150,150,150,0.08)";
       const lineW         = (N >= 96) ? 0.35 : 0.5;
 
-      quad(p1, p2, p3, p4, "#f1f1f1", terraceStroke, lineW);  // top terrace: lightest
+      quad(p1, p2, p3, p4, FACE_TOP, terraceStroke, lineW);  // top terrace: lightest
 
       const hx = (a + 1 < N) ? pi[a + 1][b] : 0;
       if (h > hx) {
@@ -319,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const q2 = project(x0, y1, zn);
         const q3 = project(x0, y1, zc);
         const q4 = project(x0, y0, zc);
-        quad(q1, q2, q3, q4, "#d6d6d6", wallStroke, lineW);     // one wall: darkest
+        quad(q1, q2, q3, q4, FACE_LEFT, wallStroke, lineW);     // one wall: darkest
       }
 
       const hy = (b + 1 < N) ? pi[a][b + 1] : 0;
@@ -329,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const r2 = project(x1, y0, zn);
         const r3 = project(x1, y0, zc);
         const r4 = project(x0, y0, zc);
-        quad(r1, r2, r3, r4, "#e2e2e2", wallStroke, lineW);     // other wall: medium
+        quad(r1, r2, r3, r4, FACE_RIGHT, wallStroke, lineW);     // other wall: medium
       }
     }
   }
