@@ -24,6 +24,7 @@ canvas.height = NY * CELL;
   // -------------------------------
   let occupied = new Uint8Array(MAX_SITES);     // 0 or 1
   let bornStep = new Int32Array(MAX_SITES);     // growth time
+  let growthType = new Uint8Array(MAX_SITES); // occupied-neighbor count at birth
   let frontier = new Set();                     // candidate empty boundary sites
   let running = false;
   let timer = null;
@@ -182,6 +183,7 @@ canvas.height = NY * CELL;
           const i = idx(x, y);
           occupied[i] = 1;
           bornStep[i] = 0;
+          growthType[i] = 0;
         }
       }
     }
@@ -201,21 +203,26 @@ canvas.height = NY * CELL;
     }
   }
 
-  function occupySite(i) {
-    if (occupied[i]) return;
-    occupied[i] = 1;
-    bornStep[i] = stepCount;
+function occupySite(i) {
+  if (occupied[i]) return;
 
-    frontier.delete(i);
-    const [x, y] = xyFromIndex(i);
-    for (const [nx, ny] of neighbors4(x, y)) {
-      if (!inBounds(nx, ny)) continue;
-      const ni = idx(nx, ny);
-      if (!occupied[ni] && countOccupiedNeighbors4(nx, ny) > 0) {
-        frontier.add(ni);
-      }
+  const [x, y] = xyFromIndex(i);
+  const nOcc = countOccupiedNeighbors4(x, y);
+
+  occupied[i] = 1;
+  bornStep[i] = stepCount;
+  growthType[i] = nOcc;
+
+  frontier.delete(i);
+
+  for (const [nx, ny] of neighbors4(x, y)) {
+    if (!inBounds(nx, ny)) continue;
+    const ni = idx(nx, ny);
+    if (!occupied[ni] && countOccupiedNeighbors4(nx, ny) > 0) {
+      frontier.add(ni);
     }
   }
+}
 
   // -------------------------------
   // Growth rules
@@ -316,23 +323,22 @@ canvas.height = NY * CELL;
 function colorForCell(i) {
   if (bornStep[i] === 0) return "#233044";
 
-  const [x, y] = xyFromIndex(i);
-  const dx = x - seedCenterX;
-  const dy = y - seedCenterY;
-  const r = Math.sqrt(dx * dx + dy * dy);
+  const gt = growthType[i];
+  let base;
 
-  const bandWidth = 8.0;
-  const q = Math.floor(r / bandWidth) % 5;
+  if (gt <= 1) base = [111, 134, 182];
+  else if (gt === 2) base = [183, 194, 216];
+  else if (gt === 3) base = [154, 141, 184];
+  else base = [94, 111, 143];
 
-  const palette = [
-    "#5b6c8f",
-    "#7d8fb0",
-    "#9ba9c2",
-    "#b8c0d1",
-    "#8a7ea8"
-  ];
+  const age = Math.min(1, bornStep[i] / 20000);
+  const mix = 0.12 * age; // gentle brightening over time
 
-  return palette[q];
+  const r = Math.round(base[0] * (1 - mix) + 245 * mix);
+  const g = Math.round(base[1] * (1 - mix) + 245 * mix);
+  const b = Math.round(base[2] * (1 - mix) + 245 * mix);
+
+  return `rgb(${r},${g},${b})`;
 }
 
   function draw() {
@@ -358,12 +364,13 @@ function colorForCell(i) {
   // -------------------------------
   // Init / reset
   // -------------------------------
-  function resetArrays() {
-    occupied = new Uint8Array(MAX_SITES);
-    bornStep = new Int32Array(MAX_SITES);
-    frontier.clear();
-    stepCount = 0;
-  }
+function resetArrays() {
+  occupied = new Uint8Array(MAX_SITES);
+  bornStep = new Int32Array(MAX_SITES);
+  growthType = new Uint8Array(MAX_SITES);
+  frontier.clear();
+  stepCount = 0;
+}
 
   function buildSeed() {
     resetArrays();
