@@ -136,57 +136,69 @@ Monte-Carlo sampling generates typical thermal crystal corners.
 
       <br>
       
-<section class="lianliankan" id="lianliankan">
-  <h3>连连看 (Lianliankan)</h3>
+<section class="lianliankan rmp-block" id="lianliankan">
+  <h3> Lianliankan (连连看)</h3>
 
-  <div class="game-bar">
-    <button id="llk-new">New Game</button>
+  <p>
+    A periodic-boundary version of the classic tile-matching game. Two identical
+    tiles vanish if they can be connected through empty space by an axis-aligned
+    path with at most two turns. Here the board lives on a torus, and an empty
+    padding ring is always present.
+  </p>
 
-    <label>
-      Size:
-      <select id="llk-size">
-        <option value="8x8" selected>8 × 8 (easy)</option>
-        <option value="16x16">16 × 16 (medium)</option>
-        <option value="32x32">32 × 32 (hard)</option>
-      </select>
-    </label>
+  <div class="llk-panel">
+    <div class="game-bar">
+      <button id="llk-new">New Game</button>
 
-    <label>
-      Symbols:
-<select id="llk-theme">
-  <option value="colors" selected>Colors (default)</option>
-  <option value="animals">Animals</option>
-  <option value="music">Music</option>
-  <option value="math">Math / Physics</option>
-  <option value="cards">Cards / Chess</option>
-  <option value="space">Space</option>
-  <option value="food">Espresso & Snacks</option>
-</select>
-    </label>
+      <label>
+        Size:
+        <select id="llk-size">
+          <option value="8x8" selected>8 × 8 (easy)</option>
+          <option value="16x16">16 × 16 (medium)</option>
+          <option value="32x32">32 × 32 (hard)</option>
+        </select>
+      </label>
 
-    <button id="llk-shuffle">Shuffle</button>
+      <label>
+        Symbols:
+        <select id="llk-theme">
+          <option value="colors" selected>Colors (default)</option>
+          <option value="animals">Animals</option>
+          <option value="music">Music</option>
+          <option value="math">Math / Physics</option>
+          <option value="cards">Cards / Chess</option>
+          <option value="space">Space</option>
+          <option value="food">Espresso & Snacks</option>
+        </select>
+      </label>
 
-    <label>
-      Zoom:
-      <button id="llk-zoom-out" type="button">−</button>
-      <button id="llk-zoom-in" type="button">+</button>
-      <button id="llk-zoom-reset" type="button">Reset</button>
-    </label>
+      <button id="llk-shuffle">Shuffle</button>
 
-    <span class="status" id="llk-status">Pick two identical tiles.</span>
-  </div>
+      <label>
+        Zoom:
+        <button id="llk-zoom-out" type="button">−</button>
+        <button id="llk-zoom-in" type="button">+</button>
+        <button id="llk-zoom-reset" type="button">Reset</button>
+      </label>
 
-  <div class="board-wrap" id="llk-wrap">
-    <div class="llk-stage" id="llk-stage">
-      <canvas class="path" id="llk-canvas"></canvas>
-      <div class="board" id="llk-board"></div>
+      <span class="status" id="llk-status">
+        Pick two identical tiles (PBC + padding ring).
+      </span>
     </div>
-  </div>
 
-  <div class="hint">
-    Rule: two identical tiles vanish if they can be connected through empty space by an axis-aligned path with ≤ 2 turns.
-    <br>
-    New behavior: <code>PBC</code> (torus) + one empty padding row/column is always present.
+    <div class="board-wrap" id="llk-wrap">
+      <div class="llk-stage" id="llk-stage">
+        <canvas class="path" id="llk-canvas"></canvas>
+        <div class="board" id="llk-board"></div>
+      </div>
+    </div>
+
+    <div class="hint">
+      Rule: two identical tiles vanish if they can be connected through empty space
+      by an axis-aligned path with ≤ 2 turns.
+      <br>
+      New behavior: <code>PBC</code> (torus) + one empty padding row/column is always present.
+    </div>
   </div>
 </section>
 
