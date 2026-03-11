@@ -118,6 +118,91 @@ Monte-Carlo sampling generates typical thermal crystal corners.
 <script src="js/lianliankan.js" defer></script>
 
 
+<br>
+
+<section class="rmp-block">
+  <h3>Radial KPZ / Eden Growth</h3>
+
+  <p>
+    Start from either a random closed curve or a regular polygon, then let the
+    interface grow outward according to different stochastic rules. The isotropic
+    rule tends toward a circular macroscopic shape, while anisotropic rules can
+    produce kinetic Wulff-like shapes. The “corner growth” option is a simple
+    LPP-inspired toy rule rather than the exact integrable model.
+  </p>
+
+  <div class="kpz-panel">
+    <div class="kpz-controls">
+      <div class="kpz-row">
+        <label for="kpzSeedType">Seed</label>
+        <select id="kpzSeedType">
+          <option value="random">Random closed curve</option>
+          <option value="polygon">Regular polygon</option>
+        </select>
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzPolygonSides">Polygon sides</label>
+        <input id="kpzPolygonSides" type="number" min="3" max="20" value="6">
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzSeedRadius">Seed radius</label>
+        <input id="kpzSeedRadius" type="number" min="8" max="60" value="22">
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzGrowthRule">Growth rule</label>
+        <select id="kpzGrowthRule">
+          <option value="isotropic">Isotropic Eden</option>
+          <option value="anis4">4-fold anisotropic</option>
+          <option value="anis6">6-fold anisotropic</option>
+          <option value="surface">Surface-tension biased</option>
+          <option value="lpp">Corner growth (LPP-like)</option>
+        </select>
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzAnisotropy">Anisotropy strength</label>
+        <input id="kpzAnisotropy" type="range" min="0" max="1.2" step="0.05" value="0.65">
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzSmoothing">Smoothing strength</label>
+        <input id="kpzSmoothing" type="range" min="0" max="3" step="0.1" value="1.2">
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzGrowthPerFrame">Growth / frame</label>
+        <input id="kpzGrowthPerFrame" type="number" min="1" max="500" value="18">
+      </div>
+
+      <div class="kpz-row">
+        <label for="kpzRandomSeed">Random seed</label>
+        <input id="kpzRandomSeed" type="number" value="12345">
+      </div>
+
+      <div class="kpz-buttons">
+        <button id="kpzStartBtn" type="button">Start</button>
+        <button id="kpzPauseBtn" type="button">Pause</button>
+        <button id="kpzStepBtn" type="button">Step</button>
+        <button id="kpzResetBtn" type="button">Reset</button>
+      </div>
+
+      <div id="kpzInfo" class="kpz-info"></div>
+    </div>
+
+    <div class="kpz-canvas-wrap">
+      <canvas id="kpzCanvas" aria-label="Radial KPZ growth canvas"></canvas>
+    </div>
+  </div>
+</section>
+
+      <script src="js/kpz.js"></script>
+
+
+
+      
 
     </section>
   </main>
