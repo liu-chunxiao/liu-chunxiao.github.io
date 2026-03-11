@@ -44,8 +44,18 @@
     }
 
 function resizeCanvas() {
-  const mobile = window.innerWidth <= 980;
-  const size = mobile ? Math.min(window.innerWidth * 0.92, 500) : 500;
+  let size = 500;
+
+  if (window.innerWidth <= 980) {
+    const wrap = canvas.parentElement;
+    const wrapStyles = window.getComputedStyle(wrap);
+    const horizontalPadding =
+      parseFloat(wrapStyles.paddingLeft) + parseFloat(wrapStyles.paddingRight);
+
+    size = Math.floor(wrap.clientWidth - horizontalPadding);
+    size = Math.max(220, size);
+  }
+
   canvas.width = size;
   canvas.height = size;
   canvas.style.width = `${size}px`;
