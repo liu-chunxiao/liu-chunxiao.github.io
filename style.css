@@ -20,21 +20,6 @@ body {
 }
 
 
-.llk-cn{
-  font-family:
-    "PingFang SC",
-    "Hiragino Sans GB",
-    "Microsoft YaHei",
-    "Noto Sans SC",
-    "Source Han Sans SC",
-    system-ui,
-    sans-serif;
-
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-
 
 /* Header styling */
 header {
@@ -498,6 +483,22 @@ footer {
 
 
 
+.llk-cn{
+  font-family:
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    "Noto Sans SC",
+    "Source Han Sans SC",
+    system-ui,
+    sans-serif;
+
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+
+
 /* ================================
    Random crystal corner game
    Add this block to the END of style.css
@@ -767,5 +768,6 @@ footer {
     width: min(700px, 100%);
   }
 }
+
 
 
