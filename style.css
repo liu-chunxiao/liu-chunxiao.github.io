@@ -573,11 +573,6 @@ footer {
 
 
 
-
-/* ============================================================
-   Radial KPZ / Eden Growth block
-   ============================================================ */
-
 /* ============================================================
    Radial KPZ / Eden Growth block
    ============================================================ */
@@ -596,76 +591,71 @@ footer {
 
 .kpz-controls {
   flex: 1 1 720px;
-  max-width: 900px;
+  max-width: 980px;
   background: #f6f3ee;
   border: 1px solid #d8d1c7;
   border-radius: 10px;
-  padding: 1rem;
+  padding: 0.9rem 1rem;
   box-sizing: border-box;
 }
 
-.kpz-controls-grid {
+.kpz-controls-grid.compact {
   display: grid;
-  grid-template-columns: repeat(2, minmax(220px, 1fr));
-  gap: 0.8rem 1rem;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 0.55rem 1.2rem;
 }
 
-.kpz-row {
-  display: flex;
-  flex-direction: column;
+.kpz-row.inline {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  align-items: center;
+  gap: 0.7rem;
 }
 
-.kpz-row label {
-  font-size: 0.94rem;
-  margin-bottom: 0.22rem;
-  color: #3b3127;
-}
-
-.kpz-row input,
-.kpz-row select,
-.kpz-buttons button {
+.kpz-row.inline label {
+  margin: 0;
   font-size: 0.95rem;
+  color: #3b3127;
+  white-space: nowrap;
 }
 
-.kpz-row input,
-.kpz-row select {
-  padding: 0.35rem 0.45rem;
+.kpz-row.inline input,
+.kpz-row.inline select {
+  width: 100%;
+  padding: 0.32rem 0.45rem;
   border: 1px solid #b8afa3;
   border-radius: 6px;
   background: #fffdfa;
   box-sizing: border-box;
-  width: 100%;
+  font-size: 0.95rem;
 }
 
 .kpz-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
 }
 
 .kpz-buttons button {
-  padding: 0.45rem 0.8rem;
+  padding: 0.4rem 0.75rem;
   border: 1px solid #8f8476;
   border-radius: 6px;
   background: #eee7dc;
   color: #2f2923;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.05s ease;
-}
-
-.kpz-buttons button:hover {
-  background: #e1d8cb;
-}
-
-.kpz-buttons button:active {
-  transform: translateY(1px);
 }
 
 .kpz-info {
-  margin-top: 0.8rem;
-  font-size: 0.92rem;
+  margin-top: 0.65rem;
+  font-size: 0.9rem;
   color: #4c4339;
+}
+
+@media (max-width: 900px) {
+  .kpz-controls-grid.compact {
+    grid-template-columns: 1fr;
+  }
 }
 
 .kpz-canvas-wrap {
@@ -686,14 +676,6 @@ footer {
   background: #fafaf7;
   image-rendering: pixelated;
 }
-
-@media (max-width: 760px) {
-  .kpz-controls-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
 
 
 
