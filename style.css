@@ -905,6 +905,17 @@ footer {
   gap: 0.32rem;
 }
 
+.gol-control-row select {
+  width: 100%;
+  font: inherit;
+  color: #3d372f;
+  background: #faf8f2;
+  border: 1px solid rgba(100, 90, 75, 0.28);
+  border-radius: 10px;
+  padding: 0.42rem 0.65rem;
+  box-sizing: border-box;
+}
+
 .gol-control-row label {
   font-size: 0.95rem;
   color: #4a433b;
