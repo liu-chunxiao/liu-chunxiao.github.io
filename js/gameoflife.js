@@ -1,21 +1,17 @@
 (function () {
   function initGameOfLife() {
     const canvas = document.getElementById("gol-canvas");
-    if (!canvas) {
-      console.error("Game of Life: canvas #gol-canvas not found.");
-      return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.error("Game of Life: 2D context not available.");
-      return;
-    }
+    if (!ctx) return;
 
     const startBtn = document.getElementById("gol-start");
     const stepBtn = document.getElementById("gol-step");
     const clearBtn = document.getElementById("gol-clear");
     const randomBtn = document.getElementById("gol-random");
+    const zoomInBtn = document.getElementById("gol-zoom-in");
+    const zoomOutBtn = document.getElementById("gol-zoom-out");
 
     const speedSlider = document.getElementById("gol-speed");
     const speedValue = document.getElementById("gol-speed-value");
@@ -26,18 +22,9 @@
     const densitySlider = document.getElementById("gol-density");
     const densityValue = document.getElementById("gol-density-value");
 
-    if (
-      !startBtn || !stepBtn || !clearBtn || !randomBtn ||
-      !speedSlider || !speedValue ||
-      !sizeSlider || !sizeValue ||
-      !densitySlider || !densityValue
-    ) {
-      console.error("Game of Life: one or more control elements are missing.");
-      return;
-    }
-
     let rows = parseInt(sizeSlider.value, 10);
     let cols = rows;
+
     let grid = [];
     let nextGrid = [];
 
@@ -47,6 +34,11 @@
     let isMouseDown = false;
     let drawMode = 1;
 
+    let zoomFactor = 1.0;
+    const zoomMin = 0.6;
+    const zoomMax = 2.4;
+    const zoomStep = 0.2;
+
     function makeEmptyGrid(r, c) {
       return Array.from({ length: r }, () => Array(c).fill(0));
     }
@@ -54,9 +46,14 @@
     function resizeCanvas() {
       const wrap = canvas.parentElement;
       const wrapWidth = wrap ? wrap.clientWidth : 720;
-      const size = Math.max(300, Math.min(wrapWidth - 8, 720));
+      const size = Math.max(260, Math.min(wrapWidth - 12, 720));
       canvas.width = size;
       canvas.height = size;
+      applyZoom();
+    }
+
+    function applyZoom() {
+      canvas.style.transform = `scale(${zoomFactor})`;
     }
 
     function initializeGrid() {
@@ -104,7 +101,7 @@
         }
       }
 
-      ctx.strokeStyle = "rgba(80,80,80,0.18)";
+      ctx.strokeStyle = "rgba(80,80,80,0.16)";
       ctx.lineWidth = 1;
 
       for (let i = 0; i <= rows; i++) {
@@ -220,11 +217,8 @@
     });
 
     startBtn.addEventListener("click", () => {
-      if (running) {
-        pauseSimulation();
-      } else {
-        startSimulation();
-      }
+      if (running) pauseSimulation();
+      else startSimulation();
     });
 
     stepBtn.addEventListener("click", () => {
@@ -239,6 +233,16 @@
     randomBtn.addEventListener("click", () => {
       pauseSimulation();
       randomizeGrid(parseFloat(densitySlider.value));
+    });
+
+    zoomInBtn.addEventListener("click", () => {
+      zoomFactor = Math.min(zoomMax, zoomFactor + zoomStep);
+      applyZoom();
+    });
+
+    zoomOutBtn.addEventListener("click", () => {
+      zoomFactor = Math.max(zoomMin, zoomFactor - zoomStep);
+      applyZoom();
     });
 
     speedSlider.addEventListener("input", () => {
