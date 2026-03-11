@@ -313,16 +313,13 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  function colorForCell(i) {
-    const t = bornStep[i];
-    if (t === 0) return "#1f2937"; // seed
-    const age = Math.min(1, t / 6000);
-    // dark blue-gray -> lighter blue
-    const r = Math.round(38 + 50 * age);
-    const g = Math.round(58 + 80 * age);
-    const b = Math.round(78 + 120 * age);
-    return `rgb(${r},${g},${b})`;
-  }
+function colorForCell(i) {
+
+  const period = 200;          // number of steps per color cycle
+  const hue = (bornStep[i] % period) / period * 360;
+
+  return `hsl(${hue}, 70%, 55%)`;
+}
 
   function draw() {
     drawBackground();
