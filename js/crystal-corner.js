@@ -8,13 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <label>
           L (crystal size)
           <input type="range" id="cc-Lexp" min="2" max="10" step="1" value="6">
-          <span id="cc-L-val">128</span>
+          <span id="cc-L-val">64</span>
         </label>
 
         <label>
           Temperature T
           <input type="range" id="cc-T" min="0.03" max="3.00" step="0.01" value="1.20">
-          <span id="cc-T-val">1.50</span>
+          <span id="cc-T-val">1.20</span>
         </label>
 
         <label>
@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
         </label>
 
         <div class="crystal-button-row">
-          <button id="cc-reset">Reset</button>
           <button id="cc-pause">Pause</button>
+          <button id="cc-reset">Reset</button>
         </div>
       </div>
 
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("cc-reset");
   const pauseBtn = document.getElementById("cc-pause");
 
-  const FACE_TOP   = "#d2d2d2";
+  const FACE_TOP   = "#dddddd";
   const FACE_LEFT  = "#a8a8a8";
   const FACE_RIGHT = "#5f5f5f";
 
@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
     oy: 0,
     sx: 1.00,
     sy: 0.56,
-    sz: 1.36
+    sz: 1.24
   };
 
   function unitProject(x, y, z) {
@@ -280,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     poly(left,  "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
     poly(right, "rgba(0,0,0,0)", "rgba(120,120,120,0.16)", 1);
-    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.12)", 1);
+    poly(top,   "rgba(0,0,0,0)", "rgba(120,120,120,0.09)", 1);
   }
 
   function drawCavity() {
