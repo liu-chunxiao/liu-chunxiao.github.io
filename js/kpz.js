@@ -9,8 +9,8 @@
   // -------------------------------
   // Canvas / lattice setup
   // -------------------------------
-  const NX = 1024;
-  const NY = 1024;
+  const NX = 512;
+  const NY = 512;
   const CELL = 1;
   const MAX_SITES = NX * NY;
 
