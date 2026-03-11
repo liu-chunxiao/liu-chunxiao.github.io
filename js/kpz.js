@@ -1,54 +1,78 @@
 // ============================================================
-// Arbitrary-seed Eden / radial KPZ growth toy
-// For liu-chunxiao.github.io / metaphysics.html
+// Radial KPZ / Eden Growth toy
+// Simplified UI version for metaphysics.html
 // ============================================================
 
 (function () {
   "use strict";
 
-// -------------------------------
-// Canvas / lattice setup
-// -------------------------------
-const NX = 320;
-const NY = 320;
-const CELL = 2;   // internal drawing scale
-const MAX_SITES = NX * NY;
+  // -------------------------------
+  // Canvas / lattice setup
+  // -------------------------------
+  const NX = 320;
+  const NY = 320;
+  const CELL = 2;
+  const MAX_SITES = NX * NY;
 
-const canvas = document.getElementById("kpzCanvas");
-const ctx = canvas.getContext("2d");
-canvas.width = NX * CELL;
-canvas.height = NY * CELL;
+  const canvas = document.getElementById("kpzCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = NX * CELL;
+  canvas.height = NY * CELL;
 
   // -------------------------------
   // State
   // -------------------------------
-  let occupied = new Uint8Array(MAX_SITES);     // 0 or 1
-  let bornStep = new Int32Array(MAX_SITES);     // growth time
-  let growthType = new Uint8Array(MAX_SITES); // occupied-neighbor count at birth
-  let frontier = new Set();                     // candidate empty boundary sites
+  let occupied = new Uint8Array(MAX_SITES);
+  let bornStep = new Int32Array(MAX_SITES);
+  let frontier = new Set();
+
   let running = false;
   let timer = null;
   let stepCount = 0;
+
   let seedCenterX = NX / 2;
   let seedCenterY = NY / 2;
 
   // -------------------------------
   // Controls
   // -------------------------------
-  const seedTypeEl = document.getElementById("kpzSeedType");
-  const polygonSidesEl = document.getElementById("kpzPolygonSides");
+  const seedShapeEl = document.getElementById("kpzSeedShape");
   const seedRadiusEl = document.getElementById("kpzSeedRadius");
   const growthRuleEl = document.getElementById("kpzGrowthRule");
+  const ruleStrengthEl = document.getElementById("kpzRuleStrength");
+  const ruleStrengthValueEl = document.getElementById("kpzRuleStrengthValue");
+  const ruleStrengthLabelEl = document.getElementById("kpzRuleStrengthLabel");
   const growthPerFrameEl = document.getElementById("kpzGrowthPerFrame");
-  const anisotropyEl = document.getElementById("kpzAnisotropy");
-  const smoothingEl = document.getElementById("kpzSmoothing");
-  const randomSeedEl = document.getElementById("kpzRandomSeed");
-  const infoEl = document.getElementById("kpzInfo");
 
-  // const startBtn = document.getElementById("kpzStartBtn");
   const pauseBtn = document.getElementById("kpzPauseBtn");
   const stepBtn = document.getElementById("kpzStepBtn");
   const resetBtn = document.getElementById("kpzResetBtn");
+  const infoEl = document.getElementById("kpzInfo");
+
+  // -------------------------------
+  // RNG
+  // -------------------------------
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0;
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  let rng = Math.random;
+
+  function reseedRandom() {
+    const seed = (Math.random() * 0xffffffff) >>> 0;
+    rng = mulberry32(seed);
+  }
+
+  function randRange(a, b) {
+    return a + (b - a) * rng();
+  }
 
   // -------------------------------
   // Helpers
@@ -63,6 +87,10 @@ canvas.height = NY * CELL;
 
   function xyFromIndex(i) {
     return [i % NX, Math.floor(i / NX)];
+  }
+
+  function clamp(x, a, b) {
+    return Math.max(a, Math.min(b, x));
   }
 
   function neighbors4(x, y) {
@@ -83,67 +111,21 @@ canvas.height = NY * CELL;
     return c;
   }
 
-  function mulberry32(seed) {
-    let a = seed >>> 0;
-    return function () {
-      a |= 0;
-      a = (a + 0x6D2B79F5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  let rng = Math.random;
-
-  function setRNG() {
-    const s = parseInt(randomSeedEl.value, 10);
-    if (Number.isFinite(s)) {
-      rng = mulberry32(s);
-    } else {
-      rng = Math.random;
+  function countOccupiedNeighbors8(x, y) {
+    let c = 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        const xx = x + dx;
+        const yy = y + dy;
+        if (inBounds(xx, yy) && occupied[idx(xx, yy)]) c++;
+      }
     }
+    return c;
   }
-
-  function randRange(a, b) {
-    return a + (b - a) * rng();
-  }
-
-  function clamp(x, a, b) {
-    return Math.max(a, Math.min(b, x));
-  }
-
-
-
-  seedTypeEl.addEventListener("change", () => {
-  const isPoly = seedTypeEl.value === "polygon";
-  polygonSidesEl.disabled = !isPoly;
-  pauseSimulation();
-  buildSeed();
-});
-
-polygonSidesEl.addEventListener("change", () => {
-  pauseSimulation();
-  buildSeed();
-});
-
-seedRadiusEl.addEventListener("change", () => {
-  pauseSimulation();
-  buildSeed();
-});
-
-growthRuleEl.addEventListener("change", () => {
-  pauseSimulation();
-  buildSeed();
-});
-
-randomSeedEl.addEventListener("change", () => {
-  pauseSimulation();
-  buildSeed();
-});
 
   // -------------------------------
-  // Polygon / curve generation
+  // Geometry
   // -------------------------------
   function makeRegularPolygon(cx, cy, r, n) {
     const pts = [];
@@ -156,19 +138,19 @@ randomSeedEl.addEventListener("change", () => {
   }
 
   function makeRandomClosedCurve(cx, cy, r0) {
-    // Radial Fourier-style random blob
     const pts = [];
-    const mMax = 5;
+    const mMax = 6;
     const amps = [];
     const phases = [];
+
     for (let m = 2; m <= mMax; m++) {
       amps.push(randRange(0.03, 0.12) * r0 / Math.sqrt(m));
       phases.push(randRange(0, 2 * Math.PI));
     }
 
-    const NPTS = 160;
-    for (let j = 0; j < NPTS; j++) {
-      const t = (2 * Math.PI * j) / NPTS;
+    const nPts = 180;
+    for (let j = 0; j < nPts; j++) {
+      const t = (2 * Math.PI * j) / nPts;
       let r = r0;
       for (let m = 2; m <= mMax; m++) {
         r += amps[m - 2] * Math.cos(m * t + phases[m - 2]);
@@ -212,15 +194,41 @@ randomSeedEl.addEventListener("change", () => {
           const i = idx(x, y);
           occupied[i] = 1;
           bornStep[i] = 0;
-          growthType[i] = 0;
         }
       }
     }
   }
 
+  function buildSeedPolygon() {
+    const radius = clamp(parseInt(seedRadiusEl.value, 10) || 28, 8, 120);
+    const shape = seedShapeEl.value;
+
+    if (shape === "random") {
+      reseedRandom();
+      return makeRandomClosedCurve(seedCenterX, seedCenterY, radius);
+    }
+
+    const nMap = {
+      tri: 3,
+      sq: 4,
+      pent: 5,
+      hex: 6,
+      oct: 8
+    };
+
+    return makeRegularPolygon(seedCenterX, seedCenterY, radius, nMap[shape] || 6);
+  }
+
   // -------------------------------
-  // Frontier handling
+  // Frontier / occupancy
   // -------------------------------
+  function resetArrays() {
+    occupied = new Uint8Array(MAX_SITES);
+    bornStep = new Int32Array(MAX_SITES);
+    frontier.clear();
+    stepCount = 0;
+  }
+
   function rebuildFrontier() {
     frontier.clear();
     for (let y = 0; y < NY; y++) {
@@ -232,26 +240,22 @@ randomSeedEl.addEventListener("change", () => {
     }
   }
 
-function occupySite(i) {
-  if (occupied[i]) return;
+  function occupySite(i) {
+    if (occupied[i]) return;
 
-  const [x, y] = xyFromIndex(i);
-  const nOcc = countOccupiedNeighbors4(x, y);
+    occupied[i] = 1;
+    bornStep[i] = stepCount;
+    frontier.delete(i);
 
-  occupied[i] = 1;
-  bornStep[i] = stepCount;
-  growthType[i] = nOcc;
-
-  frontier.delete(i);
-
-  for (const [nx, ny] of neighbors4(x, y)) {
-    if (!inBounds(nx, ny)) continue;
-    const ni = idx(nx, ny);
-    if (!occupied[ni] && countOccupiedNeighbors4(nx, ny) > 0) {
-      frontier.add(ni);
+    const [x, y] = xyFromIndex(i);
+    for (const [nx, ny] of neighbors4(x, y)) {
+      if (!inBounds(nx, ny)) continue;
+      const ni = idx(nx, ny);
+      if (!occupied[ni] && countOccupiedNeighbors4(nx, ny) > 0) {
+        frontier.add(ni);
+      }
     }
   }
-}
 
   // -------------------------------
   // Growth rules
@@ -261,42 +265,47 @@ function occupySite(i) {
   }
 
   function anisWeight(theta, fold, strength) {
-    return Math.max(0.05, 1 + strength * Math.cos(fold * theta));
+    return Math.max(0.03, 1 + strength * Math.cos(fold * theta));
+  }
+
+  function ruleStrength() {
+    return parseFloat(ruleStrengthEl.value);
   }
 
   function growthWeight(i) {
     const [x, y] = xyFromIndex(i);
     const theta = siteAngle(x, y);
-    const nOcc = countOccupiedNeighbors4(x, y);
+    const n4 = countOccupiedNeighbors4(x, y);
+    const n8 = countOccupiedNeighbors8(x, y);
     const rule = growthRuleEl.value;
-    const anis = parseFloat(anisotropyEl.value);
-    const smooth = parseFloat(smoothingEl.value);
+    const s = ruleStrength();
 
+    // Isotropic Eden
     if (rule === "isotropic") {
       return 1.0;
     }
 
+    // 4-fold anisotropic
     if (rule === "anis4") {
-      return anisWeight(theta, 4, anis);
+      return anisWeight(theta, 4, s);
     }
 
+    // 6-fold anisotropic
     if (rule === "anis6") {
-      return anisWeight(theta, 6, anis);
+      return anisWeight(theta, 6, s);
     }
 
+    // Surface-tension biased:
+    // favor filling places with many occupied neighbors
     if (rule === "surface") {
-      // Prefer filling notches / bays: more occupied neighbors => larger weight
-      return 1.0 + smooth * nOcc;
+      return 1.0 + s * (0.75 * n4 + 0.25 * n8);
     }
 
+    // LPP-like corner growth:
+    // strongly favor sites with >= 2 occupied nearest neighbors
     if (rule === "lpp") {
-      // Toy corner-growth rule:
-      // strongly prefer sites with >=2 occupied neighbors
-      // which makes faceted / corner-like outward growth.
-      if (nOcc >= 2) {
-        return 3.5 + 0.5 * nOcc;
-      }
-      return 0.08;
+      if (n4 >= 2) return 2.5 + 2.2 * s + 0.45 * n4;
+      return Math.max(0.03, 0.25 - 0.18 * s);
     }
 
     return 1.0;
@@ -307,12 +316,14 @@ function occupySite(i) {
 
     let total = 0;
     const items = [];
+
     for (const i of frontier) {
       const w = growthWeight(i);
       if (w <= 0) continue;
       items.push([i, w]);
       total += w;
     }
+
     if (items.length === 0 || total <= 0) return null;
 
     let r = rng() * total;
@@ -323,24 +334,6 @@ function occupySite(i) {
     return items[items.length - 1][0];
   }
 
-  function stepSimulation(nSteps) {
-    for (let k = 0; k < nSteps; k++) {
-      if (frontier.size === 0) {
-        stopSimulation();
-        break;
-      }
-      stepCount++;
-      const i = chooseWeightedFrontierSite();
-      if (i === null) {
-        stopSimulation();
-        break;
-      }
-      occupySite(i);
-    }
-    draw();
-    updateInfo();
-  }
-
   // -------------------------------
   // Drawing
   // -------------------------------
@@ -349,26 +342,16 @@ function occupySite(i) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-function colorForCell(i) {
-  if (bornStep[i] === 0) return "#233044";
+  function colorForCell(i) {
+    const t = bornStep[i];
+    if (t === 0) return "#1f2937";
 
-  const gt = growthType[i];
-  let base;
-
-  if (gt <= 1) base = [111, 134, 182];
-  else if (gt === 2) base = [183, 194, 216];
-  else if (gt === 3) base = [154, 141, 184];
-  else base = [94, 111, 143];
-
-  const age = Math.min(1, bornStep[i] / 20000);
-  const mix = 0.12 * age; // gentle brightening over time
-
-  const r = Math.round(base[0] * (1 - mix) + 245 * mix);
-  const g = Math.round(base[1] * (1 - mix) + 245 * mix);
-  const b = Math.round(base[2] * (1 - mix) + 245 * mix);
-
-  return `rgb(${r},${g},${b})`;
-}
+    const age = Math.min(1, t / 8000);
+    const r = Math.round(38 + 50 * age);
+    const g = Math.round(58 + 80 * age);
+    const b = Math.round(78 + 120 * age);
+    return `rgb(${r},${g},${b})`;
+  }
 
   function draw() {
     drawBackground();
@@ -381,66 +364,73 @@ function colorForCell(i) {
         ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
       }
     }
+  }
 
-    // Optional frontier highlight: much softer than before
-    ctx.fillStyle = "rgba(80, 50, 40, 0.06)";
-    for (const i of frontier) {
-      const [x, y] = xyFromIndex(i);
-      ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+  // -------------------------------
+  // UI text
+  // -------------------------------
+  function updateRuleStrengthUI() {
+    const rule = growthRuleEl.value;
+    const s = parseFloat(ruleStrengthEl.value);
+
+    if (rule === "isotropic") {
+      ruleStrengthLabelEl.textContent = "Rule strength";
+      ruleStrengthEl.disabled = true;
+      ruleStrengthValueEl.textContent = "—";
+      return;
     }
+
+    ruleStrengthEl.disabled = false;
+
+    if (rule === "anis4" || rule === "anis6") {
+      ruleStrengthLabelEl.textContent = "Anisotropy";
+    } else if (rule === "surface") {
+      ruleStrengthLabelEl.textContent = "Smoothing";
+    } else if (rule === "lpp") {
+      ruleStrengthLabelEl.textContent = "Corner bias";
+    } else {
+      ruleStrengthLabelEl.textContent = "Rule strength";
+    }
+
+    ruleStrengthValueEl.textContent = s.toFixed(2);
   }
-
-  // -------------------------------
-  // Init / reset
-  // -------------------------------
-function resetArrays() {
-  occupied = new Uint8Array(MAX_SITES);
-  bornStep = new Int32Array(MAX_SITES);
-  growthType = new Uint8Array(MAX_SITES);
-  frontier.clear();
-  stepCount = 0;
-}
-
-function buildSeed() {
-  resetArrays();
-  setRNG();
-
-  seedCenterX = NX / 2;
-  seedCenterY = NY / 2;
-
-  const radius = parseInt(seedRadiusEl.value, 10);
-  const seedType = seedTypeEl.value;
-
-  let pts;
-  if (seedType === "polygon") {
-    const n = clamp(parseInt(polygonSidesEl.value, 10) || 6, 3, 20);
-    pts = makeRegularPolygon(seedCenterX, seedCenterY, radius, n);
-  } else {
-    pts = makeRandomClosedCurve(seedCenterX, seedCenterY, radius);
-  }
-
-  fillPolygon(pts);
-  rebuildFrontier();
-  draw();
-  updateInfo();
-
-  startSimulation();
-}
 
   function updateInfo() {
     let occCount = 0;
-    for (let i = 0; i < MAX_SITES; i++) {
-      occCount += occupied[i];
-    }
+    for (let i = 0; i < MAX_SITES; i++) occCount += occupied[i];
+
     infoEl.textContent =
       `occupied = ${occCount}, frontier = ${frontier.size}, steps = ${stepCount}`;
+  }
+
+  // -------------------------------
+  // Simulation control
+  // -------------------------------
+  function stepSimulation(nSteps) {
+    for (let k = 0; k < nSteps; k++) {
+      if (frontier.size === 0) {
+        pauseSimulation();
+        break;
+      }
+      stepCount++;
+      const i = chooseWeightedFrontierSite();
+      if (i === null) {
+        pauseSimulation();
+        break;
+      }
+      occupySite(i);
+    }
+    draw();
+    updateInfo();
   }
 
   function startSimulation() {
     if (running) return;
     running = true;
+    pauseBtn.textContent = "Pause";
+
     timer = setInterval(() => {
-      const n = clamp(parseInt(growthPerFrameEl.value, 10) || 10, 1, 500);
+      const n = clamp(parseInt(growthPerFrameEl.value, 10) || 40, 1, 1200);
       stepSimulation(n);
     }, 30);
   }
@@ -450,31 +440,66 @@ function buildSeed() {
     clearInterval(timer);
     timer = null;
     running = false;
+    pauseBtn.textContent = "Resume";
   }
 
-  function stopSimulation() {
+  function togglePause() {
+    if (running) {
+      pauseSimulation();
+    } else {
+      startSimulation();
+    }
+  }
+
+  // -------------------------------
+  // Seed rebuild
+  // -------------------------------
+  function buildSeedAndRestart() {
     pauseSimulation();
+    resetArrays();
+
+    seedCenterX = NX / 2;
+    seedCenterY = NY / 2;
+
+    const pts = buildSeedPolygon();
+    fillPolygon(pts);
+    rebuildFrontier();
+    draw();
+    updateInfo();
+    updateRuleStrengthUI();
+    startSimulation();
   }
 
   // -------------------------------
   // Events
   // -------------------------------
-  pauseBtn.addEventListener("click", pauseSimulation);
+  pauseBtn.addEventListener("click", togglePause);
+
   stepBtn.addEventListener("click", () => {
-    const n = clamp(parseInt(growthPerFrameEl.value, 10) || 10, 1, 500);
+    if (running) pauseSimulation();
+    const n = clamp(parseInt(growthPerFrameEl.value, 10) || 40, 1, 1200);
     stepSimulation(n);
   });
-    resetBtn.addEventListener("click", () => {
-      pauseSimulation();
-      buildSeed();
-    });
 
-  seedTypeEl.addEventListener("change", () => {
-    const isPoly = seedTypeEl.value === "polygon";
-    polygonSidesEl.disabled = !isPoly;
+  resetBtn.addEventListener("click", () => {
+    buildSeedAndRestart();
   });
 
-  // Build first seed on load
-  seedTypeEl.dispatchEvent(new Event("change"));
-  buildSeed();
+  seedShapeEl.addEventListener("change", buildSeedAndRestart);
+  seedRadiusEl.addEventListener("change", buildSeedAndRestart);
+  growthRuleEl.addEventListener("change", buildSeedAndRestart);
+
+  ruleStrengthEl.addEventListener("input", () => {
+    updateRuleStrengthUI();
+  });
+
+  growthPerFrameEl.addEventListener("change", () => {
+    updateInfo();
+  });
+
+  // -------------------------------
+  // Initial launch
+  // -------------------------------
+  updateRuleStrengthUI();
+  buildSeedAndRestart();
 })();
