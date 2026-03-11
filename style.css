@@ -581,6 +581,14 @@ footer {
   margin: 2rem 0;
 }
 
+.rmp-block h3 {
+  margin-bottom: 0.6rem;
+}
+
+.rmp-block p {
+  margin-bottom: 1rem;
+}
+
 .kpz-layout {
   display: grid;
   grid-template-columns: 270px 1fr;
