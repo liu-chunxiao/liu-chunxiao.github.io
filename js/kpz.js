@@ -348,12 +348,15 @@ function colorForCell(i) {
 
   const u = (stepCount <= 1) ? 0 : t / stepCount;
 
-  // Stronger emphasis on recent growth
-  const v = Math.pow(u, 0.35);
+  const base = Math.pow(u, 0.38);
+  const bands1 = 0.5 + 0.5 * Math.sin(26 * u);
+  const bands2 = 0.5 + 0.5 * Math.sin(70 * u + 0.8);
 
-  const r = Math.round(40 + 90 * v);
-  const g = Math.round(62 + 110 * v);
-  const b = Math.round(86 + 145 * v);
+  const v = 0.72 * base + 0.18 * bands1 + 0.10 * bands2;
+
+  const r = Math.round(34 + 96 * v);
+  const g = Math.round(54 + 120 * v);
+  const b = Math.round(80 + 158 * v);
 
   return `rgb(${r},${g},${b})`;
 }
