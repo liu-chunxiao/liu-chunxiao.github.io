@@ -137,53 +137,64 @@ Monte-Carlo sampling generates typical thermal crystal corners.
       <br>
 
 
-      <section class="gameoflife" id="gameoflife">
+<section class="gameoflife" id="gameoflife">
   <h3>Conway’s Game of Life on a Torus</h3>
 
   <p class="game-intro">
     Conway’s Game of Life is a classic cellular automaton in which each cell is
     either alive or dead, and the entire pattern evolves by simple local rules.
-    Here the lattice has <strong>periodic boundary conditions</strong> in both directions,
-    so the square is topologically a <strong>torus</strong>: cells leaving one edge re-enter
-    from the opposite edge. Click or drag on the board to draw your own initial state.
+    Here the lattice has periodic boundary conditions in both directions, so
+    the square is topologically a torus: cells leaving one edge re-enter from
+    the opposite edge. Click or drag on the board to draw your own initial state.
   </p>
 
-<div class="gol-panel">
-  <div class="gol-toolbar">
-    <button id="gol-start">Start</button>
-    <button id="gol-step">Step</button>
-    <button id="gol-clear">Clear</button>
-    <button id="gol-random">Randomize</button>
-    <button id="gol-zoom-out" title="Zoom out">−</button>
-    <button id="gol-zoom-in" title="Zoom in">+</button>
-  </div>
+  <div class="gol-layout">
+    <div class="gol-sidebar">
+      <div class="gol-controls-block">
+        <div class="gol-toolbar">
+          <button id="gol-start">Start</button>
+          <button id="gol-step">Step</button>
+          <button id="gol-clear">Clear</button>
+          <button id="gol-random">Randomize</button>
+        </div>
 
-  <div class="gol-inline-controls">
-    <div class="gol-inline-item">
-      <label for="gol-speed">
-        Speed: <span id="gol-speed-value">120 ms</span>
-      </label>
-      <input type="range" id="gol-speed" min="40" max="500" step="10" value="120">
+        <div class="gol-toolbar gol-toolbar-small">
+          <button id="gol-zoom-out" title="Zoom out">−</button>
+          <button id="gol-zoom-in" title="Zoom in">+</button>
+        </div>
+
+        <div class="gol-control-row">
+          <label for="gol-speed">
+            Speed: <span id="gol-speed-value">120 ms</span>
+          </label>
+          <input type="range" id="gol-speed" min="40" max="500" step="10" value="120">
+        </div>
+
+        <div class="gol-control-row">
+          <label for="gol-size">
+            Grid size: <span id="gol-size-value">40 × 40</span>
+          </label>
+          <input type="range" id="gol-size" min="20" max="80" step="2" value="40">
+        </div>
+
+        <div class="gol-control-row">
+          <label for="gol-density">
+            Random density: <span id="gol-density-value">0.28</span>
+          </label>
+          <input type="range" id="gol-density" min="0.05" max="0.60" step="0.01" value="0.28">
+        </div>
+
+        <p class="gol-note">
+          Topology: torus (periodic in both directions).
+        </p>
+      </div>
     </div>
 
-    <div class="gol-inline-item">
-      <label for="gol-size">
-        Grid size: <span id="gol-size-value">40 × 40</span>
-      </label>
-      <input type="range" id="gol-size" min="20" max="80" step="2" value="40">
+    <div class="gol-board-panel">
+      <div class="gol-canvas-wrap">
+        <canvas id="gol-canvas" width="560" height="560"></canvas>
+      </div>
     </div>
-
-    <div class="gol-inline-item">
-      <label for="gol-density">
-        Random density: <span id="gol-density-value">0.28</span>
-      </label>
-      <input type="range" id="gol-density" min="0.05" max="0.60" step="0.01" value="0.28">
-    </div>
-  </div>
-</div>
-        
-  <div class="gol-canvas-wrap">
-    <canvas id="gol-canvas" width="720" height="720"></canvas>
   </div>
 </section>
 
