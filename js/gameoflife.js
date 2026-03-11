@@ -45,7 +45,7 @@
 
 function resizeCanvas() {
   const mobile = window.innerWidth <= 980;
-  const size = mobile ? Math.min(window.innerWidth * 0.92, 560) : 560;
+  const size = mobile ? Math.min(window.innerWidth * 0.92, 500) : 500;
   canvas.width = size;
   canvas.height = size;
   canvas.style.width = `${size}px`;
