@@ -57,6 +57,47 @@ nav ul li a.active {
   color: #000;
 }
 
+
+/* Mobile fix for top navigation tabs */
+@media (max-width: 900px) {
+  header nav {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-top: 0.6rem;
+  }
+
+  header nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  header nav ul {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.7rem;
+
+    width: max-content;
+    min-width: 100%;
+
+    margin: 0;
+    padding: 0 0.5rem;
+    list-style: none;
+  }
+
+  header nav li {
+    flex: 0 0 auto;
+  }
+
+  header nav a {
+    display: inline-block;
+    white-space: nowrap;
+  }
+}
+
 /* Main content styling */
 main {
   max-width: 900px;
