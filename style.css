@@ -607,7 +607,7 @@ footer {
 
 .kpz-row.inline {
   display: grid;
-  grid-template-columns: 130px 1fr;
+  grid-template-columns: 110px 220px;
   align-items: center;
   gap: 0.7rem;
 }
