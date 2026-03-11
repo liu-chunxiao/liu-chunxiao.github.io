@@ -437,7 +437,7 @@ function colorForCell(i) {
     timer = setInterval(() => {
       const n = clamp(parseInt(growthPerFrameEl.value, 10) || 40, 1, 1200);
       stepSimulation(n);
-    }, 30);
+    }, 20);
   }
 
   function pauseSimulation() {
