@@ -8,13 +8,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <label>
           L (crystal size)
           <input type="range" id="cc-Lexp" min="2" max="10" step="1" value="6">
-          <span id="cc-L-val">64</span>
+          <span id="cc-L-val">128</span>
         </label>
 
         <label>
           Temperature T
           <input type="range" id="cc-T" min="0.03" max="3.00" step="0.01" value="1.20">
-          <span id="cc-T-val">1.20</span>
+          <span id="cc-T-val">1.50</span>
         </label>
 
         <label>
