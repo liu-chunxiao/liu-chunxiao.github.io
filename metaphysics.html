@@ -133,8 +133,8 @@ Monte-Carlo sampling generates typical thermal crystal corners.
 
   <div class="kpz-panel">
 <div class="kpz-controls">
-  <div class="kpz-controls-grid">
-    <div class="kpz-row">
+  <div class="kpz-controls-grid compact">
+    <div class="kpz-row inline">
       <label for="kpzSeedType">Seed</label>
       <select id="kpzSeedType">
         <option value="random">Random closed curve</option>
@@ -142,17 +142,17 @@ Monte-Carlo sampling generates typical thermal crystal corners.
       </select>
     </div>
 
-    <div class="kpz-row">
+    <div class="kpz-row inline">
       <label for="kpzPolygonSides">Polygon sides</label>
       <input id="kpzPolygonSides" type="number" min="3" max="20" value="6">
     </div>
 
-    <div class="kpz-row">
+    <div class="kpz-row inline">
       <label for="kpzSeedRadius">Seed radius</label>
       <input id="kpzSeedRadius" type="number" min="8" max="90" value="28">
     </div>
 
-    <div class="kpz-row">
+    <div class="kpz-row inline">
       <label for="kpzGrowthRule">Growth rule</label>
       <select id="kpzGrowthRule">
         <option value="isotropic">Isotropic Eden</option>
@@ -163,29 +163,28 @@ Monte-Carlo sampling generates typical thermal crystal corners.
       </select>
     </div>
 
-    <div class="kpz-row">
-      <label for="kpzAnisotropy">Anisotropy strength</label>
+    <div class="kpz-row inline">
+      <label for="kpzAnisotropy">Anisotropy</label>
       <input id="kpzAnisotropy" type="range" min="0" max="1.2" step="0.05" value="0.65">
     </div>
 
-    <div class="kpz-row">
-      <label for="kpzSmoothing">Smoothing strength</label>
+    <div class="kpz-row inline">
+      <label for="kpzSmoothing">Smoothing</label>
       <input id="kpzSmoothing" type="range" min="0" max="3" step="0.1" value="1.2">
     </div>
 
-    <div class="kpz-row">
+    <div class="kpz-row inline">
       <label for="kpzGrowthPerFrame">Growth / frame</label>
       <input id="kpzGrowthPerFrame" type="number" min="1" max="1000" value="40">
     </div>
 
-    <div class="kpz-row">
+    <div class="kpz-row inline">
       <label for="kpzRandomSeed">Random seed</label>
       <input id="kpzRandomSeed" type="number" value="12345">
     </div>
   </div>
 
   <div class="kpz-buttons">
-    <button id="kpzStartBtn" type="button">Start</button>
     <button id="kpzPauseBtn" type="button">Pause</button>
     <button id="kpzStepBtn" type="button">Step</button>
     <button id="kpzResetBtn" type="button">Reset</button>
