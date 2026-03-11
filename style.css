@@ -574,3 +574,106 @@ footer {
 
 
 
+/* ============================================================
+   Radial KPZ / Eden Growth block
+   ============================================================ */
+
+.rmp-block {
+  margin: 2rem 0;
+}
+
+.kpz-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+}
+
+.kpz-controls {
+  flex: 0 0 280px;
+  max-width: 320px;
+  background: #f6f3ee;
+  border: 1px solid #d8d1c7;
+  border-radius: 10px;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.kpz-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.85rem;
+}
+
+.kpz-row label {
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+  color: #3b3127;
+}
+
+.kpz-row input,
+.kpz-row select,
+.kpz-buttons button {
+  font-size: 0.95rem;
+}
+
+.kpz-row input,
+.kpz-row select {
+  padding: 0.35rem 0.45rem;
+  border: 1px solid #b8afa3;
+  border-radius: 6px;
+  background: #fffdfa;
+}
+
+.kpz-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.kpz-buttons button {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid #8f8476;
+  border-radius: 6px;
+  background: #eee7dc;
+  color: #2f2923;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.kpz-buttons button:hover {
+  background: #e1d8cb;
+}
+
+.kpz-buttons button:active {
+  transform: translateY(1px);
+}
+
+.kpz-info {
+  margin-top: 0.9rem;
+  font-size: 0.92rem;
+  color: #4c4339;
+}
+
+.kpz-canvas-wrap {
+  flex: 1 1 560px;
+  min-width: 320px;
+  background: #f8f8f6;
+  border: 1px solid #d8d8d2;
+  border-radius: 10px;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+#kpzCanvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #c8c8c0;
+  background: #fafaf7;
+  image-rendering: pixelated;
+}
+
+
