@@ -834,7 +834,7 @@ footer {
 
 .gol-layout {
   display: grid;
-  grid-template-columns: 240px max-content;
+  grid-template-columns: 240px auto;
   gap: 1rem;
   align-items: start;
   justify-content: center;
