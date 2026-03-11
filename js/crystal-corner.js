@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const FACE_TOP   = "#d2d2d2";
   const FACE_LEFT  = "#a8a8a8";
-  const FACE_RIGHT = "#4a4a4a";
+  const FACE_RIGHT = "#5f5f5f";
 
   let paused = false;
 
