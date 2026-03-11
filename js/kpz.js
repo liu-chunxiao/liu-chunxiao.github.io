@@ -9,9 +9,9 @@
   // -------------------------------
   // Canvas / lattice setup
   // -------------------------------
-  const NX = 320;
-  const NY = 320;
-  const CELL = 2;
+  const NX = 1024;
+  const NY = 1024;
+  const CELL = 1;
   const MAX_SITES = NX * NY;
 
   const canvas = document.getElementById("kpzCanvas");
@@ -342,16 +342,21 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  function colorForCell(i) {
-    const t = bornStep[i];
-    if (t === 0) return "#1f2937";
+function colorForCell(i) {
+  const t = bornStep[i];
+  if (t === 0) return "#1f2937";
 
-    const age = Math.min(1, t / 8000);
-    const r = Math.round(38 + 50 * age);
-    const g = Math.round(58 + 80 * age);
-    const b = Math.round(78 + 120 * age);
-    return `rgb(${r},${g},${b})`;
-  }
+  const u = (stepCount <= 1) ? 0 : t / stepCount;
+
+  // Stronger emphasis on recent growth
+  const v = Math.pow(u, 0.35);
+
+  const r = Math.round(40 + 90 * v);
+  const g = Math.round(62 + 110 * v);
+  const b = Math.round(86 + 145 * v);
+
+  return `rgb(${r},${g},${b})`;
+}
 
   function draw() {
     drawBackground();
