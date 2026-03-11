@@ -583,8 +583,8 @@ footer {
 
 .kpz-layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 1.2rem;
+  grid-template-columns: 270px 1fr;
+  gap: 1rem;
   align-items: start;
   margin-top: 1rem;
 }
@@ -593,12 +593,12 @@ footer {
   background: #f6f3ee;
   border: 1px solid #d8d1c7;
   border-radius: 16px;
-  padding: 1.2rem 1.1rem;
+  padding: 1rem 1rem 0.95rem 1rem;
   box-sizing: border-box;
 }
 
 .kpz-control {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
 }
 
 .kpz-control label {
@@ -634,7 +634,7 @@ footer {
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
-  margin-top: 0.5rem;
+  margin-top: 0.45rem;
 }
 
 .kpz-buttons button {
@@ -656,7 +656,7 @@ footer {
 }
 
 .kpz-info {
-  margin-top: 1rem;
+  margin-top: 0.9rem;
   font-size: 0.92rem;
   color: #4c4339;
   line-height: 1.45;
@@ -666,30 +666,35 @@ footer {
   background: #f8f8f6;
   border: 1px solid #d8d8d2;
   border-radius: 16px;
-  padding: 0.9rem;
+  padding: 0.45rem;
   box-sizing: border-box;
-  min-height: 720px;
-  display: flex;
-  align-items: center;
+  min-height: 0;
+  display: inline-flex;
+  align-items: flex-start;
   justify-content: center;
 }
 
 #kpzCanvas {
   display: block;
-  width: min(800px, 100%);
+  width: min(760px, 100%);
   height: auto;
   border: 1px solid #c8c8c0;
   background: #fafaf7;
   image-rendering: pixelated;
 }
 
+/* Slightly tighter spacing on smaller screens */
 @media (max-width: 980px) {
   .kpz-layout {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 1fr;
   }
 
   .kpz-stage {
-    min-height: auto;
+    padding: 0.4rem;
+  }
+
+  #kpzCanvas {
+    width: min(700px, 100%);
   }
 }
 
