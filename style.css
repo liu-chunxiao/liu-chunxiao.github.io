@@ -301,137 +301,183 @@ footer {
    Lianliankan mini-game (Metaphysics page)
    ========================================================= */
 
-.lianliankan { margin-top: 1.2rem; }
-
-.lianliankan .game-bar{
-  display:flex; flex-wrap:wrap; gap:0.5rem 0.9rem; align-items:center;
-  margin:0.8rem 0 1rem 0; font-size:0.95em;
+.lianliankan {
+  margin-top: 1.2rem;
 }
+
+/* Outer panel, so the whole game looks like the other RMP applets */
+.lianliankan .llk-panel {
+  background: #f8f8f6;
+  border: 1px solid #d8d8d2;
+  border-radius: 16px;
+  padding: 1rem 1rem 0.9rem 1rem;
+  box-sizing: border-box;
+  margin-top: 0.9rem;
+}
+
+/* Top control bar remains at the top */
+.lianliankan .game-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+  align-items: center;
+  margin: 0 0 1rem 0;
+  font-size: 0.95em;
+}
+
+.lianliankan .game-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
 .lianliankan .game-bar button,
-.lianliankan .game-bar select{
-  font-family:inherit; font-size:0.95em; padding:0.32rem 0.55rem;
-  border:1px solid rgba(0,0,0,0.25); background:#fff; border-radius:8px; cursor:pointer;
+.lianliankan .game-bar select {
+  font-family: inherit;
+  font-size: 0.95em;
+  padding: 0.32rem 0.55rem;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
 }
-.lianliankan .game-bar button:hover,
-.lianliankan .game-bar select:hover{ border-color:rgba(0,0,0,0.5); }
 
-.lianliankan .status{ opacity:0.8; }
+.lianliankan .game-bar button:hover,
+.lianliankan .game-bar select:hover {
+  border-color: rgba(0, 0, 0, 0.5);
+}
+
+.lianliankan .status {
+  opacity: 0.8;
+}
 
 /* Wrap: allow scroll if huge board; stage is zoomed */
-.lianliankan .board-wrap{
-  position:relative;
-  width:min(980px, 98%);
-  margin:0.5rem auto 0 auto;
-  overflow:auto;            /* important for 32×32 */
-  border-radius:14px;
+.lianliankan .board-wrap {
+  position: relative;
+  width: min(1040px, 100%);
+  margin: 0 auto;
+  overflow: auto;
+  border-radius: 14px;
+  background: transparent;
 }
 
-
 /* Stage holds BOTH canvas+board so zoom keeps them aligned */
-.lianliankan .llk-stage{
-  position:relative;
+.lianliankan .llk-stage {
+  position: relative;
   transform: scale(var(--llk-zoom, 1));
   transform-origin: top left;
 }
 
 /* canvas overlays board exactly */
-.lianliankan canvas.path{
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:2;
+.lianliankan canvas.path {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
 }
 
-/* Board: smaller gaps and padding */
-.lianliankan .board{
-  display:grid;
+/* Board */
+.lianliankan .board {
+  display: grid;
   gap: 1px;
   padding: 5px;
-  background: rgba(255,255,255,0.55);
-  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 14px;
 
-  width: 100%;            /* IMPORTANT: occupy wrapper width */
-  max-width: 980px;       /* optional; keeps it sane on big screens */
-  margin: 0 auto;         /* center */
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
-/* Tiles: square, sharp corners, prevent content from expanding them */
-.lianliankan .tile{
-  aspect-ratio:1/1;
-  height:auto;
-  min-width:0;              /* crucial */
-  min-height:0;
-  border-radius:0;
-  border:1px solid rgba(0,0,0,0.18);
-  background:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  user-select:none;
+/* Tiles */
+.lianliankan .tile {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 0;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
 }
 
-.lianliankan .tile:hover{ border-color:rgba(0,0,0,0.35); }
-
-.lianliankan .tile.selected{
-  border-color:rgba(0,0,0,0.75);
-  outline:2px solid rgba(0,0,0,0.12);
+.lianliankan .tile:hover {
+  border-color: rgba(0, 0, 0, 0.35);
 }
 
-.lianliankan .tile.empty{
-  background:transparent;
-  border:1px dashed rgba(0,0,0,0.10);
-  cursor:default;
+.lianliankan .tile.selected {
+  border-color: rgba(0, 0, 0, 0.75);
+  outline: 2px solid rgba(0, 0, 0, 0.12);
 }
 
-/* Symbol wrapper: scales with board size via --llk-font-size */
-.lianliankan .tile .llk-symbol{
-  width:92%;
-  height:92%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
+.lianliankan .tile.empty {
+  background: transparent;
+  border: 1px dashed rgba(0, 0, 0, 0.10);
+  cursor: default;
+}
+
+/* Symbol wrapper */
+.lianliankan .tile .llk-symbol {
+  width: 92%;
+  height: 92%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   font-size: var(--llk-font-size, 18px);
-  line-height:1;
+  line-height: 1;
 }
 
 /* Twemoji SVG scales perfectly */
-.lianliankan .tile .llk-symbol img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  display:block;
+.lianliankan .tile .llk-symbol img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
-/* Color tile style (no emoji/text needed) */
-.lianliankan .tile.color-tile{
+/* Color tile style */
+.lianliankan .tile.color-tile {
   background: var(--llk-tile-color, #ffffff);
-  border: 1px solid rgba(0,0,0,0.14);
+  border: 1px solid rgba(0, 0, 0, 0.14);
 }
 
-.lianliankan .tile.color-tile.selected{
-  outline: 3px solid rgba(0,0,0,0.18);
-  border-color: rgba(0,0,0,0.40);
+.lianliankan .tile.color-tile.selected {
+  outline: 3px solid rgba(0, 0, 0, 0.18);
+  border-color: rgba(0, 0, 0, 0.40);
 }
 
-/* Even smaller spacing between plaquettes */
-.lianliankan .board{
-  gap: 1px;      /* was 2px */
-  padding: 5px;  /* slightly smaller padding */
+.lianliankan .hint {
+  margin-top: 0.8rem;
+  font-size: 0.9em;
+  opacity: 0.8;
 }
 
-.lianliankan .hint{
-  margin-top:0.7rem;
-  font-size:0.9em;
-  opacity:0.8;
-}
-.lianliankan .hint code{
+.lianliankan .hint code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size:0.95em;
+  font-size: 0.95em;
 }
 
+/* Small-screen behavior */
+@media (max-width: 760px) {
+  .lianliankan .llk-panel {
+    padding: 0.85rem 0.8rem 0.8rem 0.8rem;
+  }
+
+  .lianliankan .game-bar {
+    gap: 0.45rem 0.7rem;
+  }
+
+  .lianliankan .board-wrap {
+    width: 100%;
+  }
+}
 
 
 
