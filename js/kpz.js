@@ -6,18 +6,18 @@
 (function () {
   "use strict";
 
-  // -------------------------------
-  // Canvas / lattice setup
-  // -------------------------------
-  const NX = 180;
-  const NY = 180;
-  const CELL = 3; // displayed pixel size
-  const MAX_SITES = NX * NY;
+// -------------------------------
+// Canvas / lattice setup
+// -------------------------------
+const NX = 320;
+const NY = 320;
+const CELL = 2;   // internal drawing scale
+const MAX_SITES = NX * NY;
 
-  const canvas = document.getElementById("kpzCanvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = NX * CELL;
-  canvas.height = NY * CELL;
+const canvas = document.getElementById("kpzCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = NX * CELL;
+canvas.height = NY * CELL;
 
   // -------------------------------
   // State
@@ -314,11 +314,25 @@
   }
 
 function colorForCell(i) {
+  if (bornStep[i] === 0) return "#233044";
 
-  const period = 200;          // number of steps per color cycle
-  const hue = (bornStep[i] % period) / period * 360;
+  const [x, y] = xyFromIndex(i);
+  const dx = x - seedCenterX;
+  const dy = y - seedCenterY;
+  const r = Math.sqrt(dx * dx + dy * dy);
 
-  return `hsl(${hue}, 70%, 55%)`;
+  const bandWidth = 8.0;
+  const q = Math.floor(r / bandWidth) % 5;
+
+  const palette = [
+    "#5b6c8f",
+    "#7d8fb0",
+    "#9ba9c2",
+    "#b8c0d1",
+    "#8a7ea8"
+  ];
+
+  return palette[q];
 }
 
   function draw() {
@@ -333,8 +347,8 @@ function colorForCell(i) {
       }
     }
 
-    // Optional: highlight current frontier very faintly
-    ctx.fillStyle = "rgba(200,80,80,0.18)";
+    // Optional frontier highlight: much softer than before
+    ctx.fillStyle = "rgba(80, 50, 40, 0.06)";
     for (const i of frontier) {
       const [x, y] = xyFromIndex(i);
       ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
