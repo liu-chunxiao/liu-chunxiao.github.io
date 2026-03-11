@@ -43,14 +43,15 @@
       return Array.from({ length: r }, () => Array(c).fill(0));
     }
 
-    function resizeCanvas() {
-      const wrap = canvas.parentElement;
-      const wrapWidth = wrap ? wrap.clientWidth : 720;
-      const size = Math.max(260, Math.min(wrapWidth - 12, 720));
-      canvas.width = size;
-      canvas.height = size;
-      applyZoom();
-    }
+function resizeCanvas() {
+  const mobile = window.innerWidth <= 980;
+  const size = mobile ? Math.min(window.innerWidth * 0.92, 560) : 560;
+  canvas.width = size;
+  canvas.height = size;
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+  applyZoom();
+}
 
     function applyZoom() {
       canvas.style.transform = `scale(${zoomFactor})`;
