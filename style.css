@@ -837,7 +837,7 @@ footer {
   grid-template-columns: 240px max-content;
   gap: 1rem;
   align-items: start;
-  justify-content: start;
+  justify-content: center;
 }
 
 .gol-sidebar,
