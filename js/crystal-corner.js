@@ -323,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const q2 = project(x0, y1, zn);
         const q3 = project(x0, y1, zc);
         const q4 = project(x0, y0, zc);
-        quad(q1, q2, q3, q4, FACE_LEFT, wallStroke, lineW);     // one wall: darkest
+        quad(q1, q2, q3, q4, FACE_RIGHT, wallStroke, lineW);     // one wall: darkest
       }
 
       const hy = (b + 1 < N) ? pi[a][b + 1] : 0;
@@ -333,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const r2 = project(x1, y0, zn);
         const r3 = project(x1, y0, zc);
         const r4 = project(x0, y0, zc);
-        quad(r1, r2, r3, r4, FACE_RIGHT, wallStroke, lineW);     // other wall: medium
+        quad(r1, r2, r3, r4, FACE_LEFT, wallStroke, lineW);     // other wall: medium
       }
     }
   }
